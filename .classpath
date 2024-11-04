@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER">
+		<attributes>
+			<attribute name="module" value="true"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="lib" path="resources/lib/barbecue-1.5-beta1.jar"/>
+	<classpathentry kind="lib" path="resources/lib/commons-codec-1.16.0.jar"/>
+	<classpathentry kind="lib" path="resources/lib/commons-collections4-4.4.jar"/>
+	<classpathentry kind="lib" path="resources/lib/commons-compress-1.24.0.jar"/>
+	<classpathentry kind="lib" path="resources/lib/commons-io-2.13.0.jar"/>
+	<classpathentry kind="lib" path="resources/lib/flatlaf-3.2.jar"/>
+	<classpathentry kind="lib" path="resources/lib/flatlaf-extras-3.2.jar"/>
+	<classpathentry kind="lib" path="resources/lib/flatlaf-fonts-roboto-2.137.jar"/>
+	<classpathentry kind="lib" path="resources/lib/itextpdf-5.5.13.3.jar"/>
+	<classpathentry kind="lib" path="resources/lib/jcalendar-1.2.2.jar"/>
+	<classpathentry kind="lib" path="resources/lib/jnativehook-2.2.2.jar"/>
+	<classpathentry kind="lib" path="resources/lib/jsvg-1.2.0.jar"/>
+	<classpathentry kind="lib" path="resources/lib/log4j-api-2.20.0.jar"/>
+	<classpathentry kind="lib" path="resources/lib/poi-5.2.4.jar"/>
+	<classpathentry kind="lib" path="resources/lib/poi-ooxml-5.2.4.jar"/>
+	<classpathentry kind="lib" path="resources/lib/poi-ooxml-lite-5.2.4.jar"/>
+	<classpathentry kind="lib" path="resources/lib/poi-scratchpad-5.2.4.jar"/>
+	<classpathentry kind="lib" path="resources/lib/swing-toast-notifications-1.0.1.jar"/>
+	<classpathentry kind="lib" path="resources/lib/TimingFramework-0.55.jar"/>
+	<classpathentry kind="lib" path="resources/lib/xchart-3.8.5.jar"/>
+	<classpathentry kind="lib" path="resources/lib/xmlbeans-5.1.1.jar"/>
+	<classpathentry kind="lib" path="resources/lib/sqljdbc42.jar"/>
+	<classpathentry kind="lib" path="D:/HeThongBanVeTau/lib (1)/swing-toast-notifications-1.0.1.jar"/>
+	<classpathentry kind="lib" path="D:/HeThongBanVeTau/lib (1)/TimingFramework-0.55.jar"/>
+	<classpathentry kind="lib" path="D:/HeThongBanVeTau/lib (1)/xchart-3.8.5.jar"/>
+	<classpathentry kind="lib" path="C:/Users/ad/Downloads/jfreechart-1.0.19/jfreechart-1.0.19/lib/jfreechart-1.0.19.jar"/>
+	<classpathentry kind="lib" path="C:/Users/ad/Downloads/jfreechart-1.0.19/jfreechart-1.0.19/lib/jcommon-1.0.23.jar"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>
