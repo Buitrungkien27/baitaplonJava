@@ -28,7 +28,7 @@ import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 import javax.swing.UIManager;
 import raven.toast.Notifications;
-
+//kien
 public class Application extends javax.swing.JFrame {
 
     public static Application app;
