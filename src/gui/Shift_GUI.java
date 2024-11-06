@@ -1,7 +1,6 @@
 package gui;
 
 //import bus.ShiftsManagemant_BUS;
-import entity.Shift;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -9,16 +8,18 @@ import java.util.Date;
 import javax.swing.JLabel;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
+
+import bus.Phien_BUS;
+import entity.Phien;
 import utilities.SVGIcon;
 public class Shift_GUI extends javax.swing.JPanel {
-
     private DefaultTableModel tblModel_shift;
-//    private ShiftsManagemant_BUS shift_bus = new ShiftsManagemant_BUS();
+    private Phien_BUS shift_bus = new Phien_BUS();
 
     public Shift_GUI() {
         initTableModel();
         initComponents();
-//        renderShiftsTable(shift_bus.getShiftsByDate(new Date()));
+        renderShiftsTable(shift_bus.getShiftsByDate(new Date()));
         alterTable();
     }
 
@@ -28,6 +29,14 @@ public class Shift_GUI extends javax.swing.JPanel {
         }, 0);
     }
 
+    public void renderShiftsTable(ArrayList<Phien> list) {
+        tblModel_shift.setRowCount(0);
+        SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
+        for (Phien shift : list) {
+            Object[] row = new Object[]{shift.getShiftID(), shift.getAccount().getNhanVien().getMaNV(), shift.getAccount().getNhanVien().getTenNV(), shift.getAccount().getNhanVien().getChucVu(), formatter.format(shift.getStartedAt()), formatter.format(shift.getEndedAt())};
+            tblModel_shift.addRow(row);
+        }
+    }
 
     public void alterTable() {
         DefaultTableCellRenderer rightAlign = new DefaultTableCellRenderer();
@@ -39,7 +48,12 @@ public class Shift_GUI extends javax.swing.JPanel {
        
     }
 
-
+    public void reloadForm() {
+    	txt_empID.setText("");
+    	date_dateAt.setDate(new Date());
+    	cbo_role.setSelectedIndex(0);
+    }
+    
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
@@ -95,7 +109,7 @@ public class Shift_GUI extends javax.swing.JPanel {
         jLabel3.setText("Chức vụ: ");
         jPanel3.add(jLabel3);
 
-        cbo_role.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Tất Cả", "Cửa Hàng Trưởng", "Nhân Viên Bán Hàng" }));
+        cbo_role.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Tất Cả", "Quản Lý", "Nhân Viên Bán Vé" }));
         jPanel3.add(cbo_role);
 
         pnl_header.add(jPanel3);
@@ -115,7 +129,7 @@ public class Shift_GUI extends javax.swing.JPanel {
         btn_reload.setText("Làm mới");
         btn_reload.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-//                btn_reloadActionPerformed(evt);
+                btn_reloadActionPerformed(evt);
             }
         });
         jPanel4.add(btn_reload);
@@ -130,15 +144,13 @@ public class Shift_GUI extends javax.swing.JPanel {
         Date date = date_dateAt.getDate();
         String id = txt_empID.getText().trim();
         String role = (String) cbo_role.getSelectedItem();
-//        renderShiftsTable(shift_bus.filter(id, role, date));
+        renderShiftsTable(shift_bus.filter(id, role, date));
     }//GEN-LAST:event_btn_filterActionPerformed
 
-//    private void btn_reloadActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_reloadActionPerformed
-//          ArrayList<Shift> list = shift_bus.getShiftsByDate(new Date());
-//          for (Shift shift : list) {
-//        }
-//// TODO add your handling code here:
-//    }//GEN-LAST:event_btn_reloadActionPerformed
+    private void btn_reloadActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_reloadActionPerformed
+    	renderShiftsTable(shift_bus.getShiftsByDate(new Date()));
+    	reloadForm();
+    }//GEN-LAST:event_btn_reloadActionPerformed
 
 
     // Variables declaration - do not modify//GEN-BEGIN:variables

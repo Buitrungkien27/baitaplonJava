@@ -1,4 +1,6 @@
 package main;
+
+import bus.Phien_BUS;
 import com.formdev.flatlaf.FlatLaf;
 import com.formdev.flatlaf.extras.FlatAnimatedLafChange;
 import com.formdev.flatlaf.fonts.roboto.FlatRobotoFont;
@@ -6,10 +8,10 @@ import com.formdev.flatlaf.themes.FlatMacLightLaf;
 import com.formdev.flatlaf.extras.FlatSVGIcon;
 import com.github.kwhat.jnativehook.GlobalScreen;
 import com.github.kwhat.jnativehook.NativeHookException;
-import connectDB.ConnectDB;
+import connectDB.*;
 import entity.Account;
 import entity.NhanVien;
-import entity.Shift;
+import entity.Phien;
 import gui.Login_GUI;
 import gui.MainView;
 import java.awt.Component;
@@ -26,12 +28,15 @@ import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 import javax.swing.UIManager;
 import raven.toast.Notifications;
+
 public class Application extends javax.swing.JFrame {
 
     public static Application app;
     private final MainView mainForm;
     public static NhanVien nhanVien = null;
     private final Login_GUI loginForm;
+    private static Phien_BUS shift_BUS = new Phien_BUS();
+    private static Phien shift;
 
     public Application() {
         initComponents();
@@ -54,6 +59,16 @@ public class Application extends javax.swing.JFrame {
                         "Bạn có thật sự muốn tắt?", "Đóng ứng dụng?",
                         JOptionPane.YES_NO_OPTION,
                         JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
+                    if (nhanVien != null) {
+                        try {
+                            //                    Đóng kết nối
+                            shift.setEndedAt(new Date());
+                        } catch (Exception ex) {
+                            Logger.getLogger(Application.class.getName()).log(Level.SEVERE, null, ex);
+                        }
+                        shift_BUS.createShifts(shift);
+                    }
+                    ConnectDB.disconnect();
                     System.exit(0);
                 }
             }
@@ -73,7 +88,8 @@ public class Application extends javax.swing.JFrame {
         app.mainForm.setSelectedMenu(index, subIndex);
     }
 
-    public static void login(NhanVien nv) throws Exception {
+    public static void login(NhanVien employee) throws Exception {
+//        Update UI
         FlatAnimatedLafChange.showSnapshot();
         app.setContentPane(app.mainForm);
         app.mainForm.applyComponentOrientation(app.getComponentOrientation());
@@ -81,18 +97,25 @@ public class Application extends javax.swing.JFrame {
         setSelectedMenu(0, 0);
         SwingUtilities.updateComponentTreeUI(app.mainForm);
         FlatAnimatedLafChange.hideSnapshotWithAnimation();
-        Application.nhanVien = nv;
+        shift = new Phien(shift_BUS.renderID(), new Date(), new Account(employee));
+//        Update state
+        Application.nhanVien = employee;
         MainView.rerenderMenuByEmployee();
         Notifications.getInstance().show(Notifications.Type.SUCCESS, "Đăng nhập vào hệ thống thành công");
     }
 
     public static void logout() throws Exception {
+//        Update UI
         FlatAnimatedLafChange.showSnapshot();
         app.setContentPane(app.loginForm);
         app.loginForm.applyComponentOrientation(app.getComponentOrientation());
         SwingUtilities.updateComponentTreeUI(app.loginForm);
         FlatAnimatedLafChange.hideSnapshotWithAnimation();
+
+//        Update state
         Application.nhanVien = null;
+        shift.setEndedAt(new Date());
+        shift_BUS.createShifts(shift);
         Notifications.getInstance().show(Notifications.Type.INFO, "Đăng xuất khỏi hệ thống thành công");
     }
 
@@ -104,7 +127,7 @@ public class Application extends javax.swing.JFrame {
     private void initComponents() {
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-        setTitle("Ga Sài Gòn");
+        setTitle("Hệ thống bán vé tàu");
         setMinimumSize(new java.awt.Dimension(550, 768));
         setPreferredSize(new java.awt.Dimension(1366, 768));
         addKeyListener(new java.awt.event.KeyAdapter() {
@@ -125,15 +148,19 @@ public class Application extends javax.swing.JFrame {
         );
 
         pack();
-    }
-    private void formKeyTyped(java.awt.event.KeyEvent evt) {
-       
-    }
+    }// </editor-fold>//GEN-END:initComponents
+
+    private void formKeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_formKeyTyped
+        
+    }//GEN-LAST:event_formKeyTyped
+
     public static void main(String args[]) {
         FlatRobotoFont.install();
         FlatLaf.registerCustomDefaultsSource("theme");
         UIManager.put("defaultFont", new Font(FlatRobotoFont.FAMILY, Font.PLAIN, 15));
         FlatMacLightLaf.setup();
+
+//        Contact native 
         try {
             GlobalScreen.registerNativeHook();
         } catch (NativeHookException ex) {
@@ -142,12 +169,16 @@ public class Application extends javax.swing.JFrame {
 
             System.exit(1);
         }
+
+//        Connect db
         try {
             ConnectDB.connect();
         } catch (SQLException e) {
             JOptionPane.showMessageDialog(null, "Không thể kết nối đến database!", "Không thể khởi động ứng dụng", JOptionPane.DEFAULT_OPTION);
             System.exit(0);
         }
+
+//        Delay render
         Timer timer = new Timer(2500, (ActionEvent evt) -> {
             java.awt.EventQueue.invokeLater(() -> {
                 app.setVisible(true);
@@ -156,6 +187,5 @@ public class Application extends javax.swing.JFrame {
         timer.setRepeats(false);
         timer.start();
         app = new Application();
-
     }
 }

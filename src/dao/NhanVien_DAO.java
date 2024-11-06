@@ -1,7 +1,3 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package dao;
 
 import connectDB.ConnectDB;
@@ -110,7 +106,7 @@ public class NhanVien_DAO implements DAOBase<NhanVien> {
             st.setString(10, object.getDiaChi());
 
             n = st.executeUpdate();
-            String password = "e10adc3949ba59abbe56e057f20f883e";
+            String password = "3e6c7d141e32189c917761138b026b74";
             Account account = new Account(password, object);
             new Account_DAO().create(account);
         } catch (Exception e) {
@@ -136,7 +132,7 @@ public class NhanVien_DAO implements DAOBase<NhanVien> {
                     + "      ,[diaChi] = ?"
                     + " WHERE maNV = ?");
             st.setString(1, id);
-            st.setString(2, newObject.getMaNV());
+            st.setString(2, newObject.getTenNV());
             st.setString(3, newObject.getChucVu());
             st.setBoolean(4, newObject.getTrangThai());
             st.setDate(5, new java.sql.Date(newObject.getNgaySinh().getTime()));
@@ -200,7 +196,7 @@ public class NhanVien_DAO implements DAOBase<NhanVien> {
             if(role == 1)
                 st.setString(index++, "Nhân Viên Bán Vé");
             else if(role == 2)
-                st.setString(index++, "Quản Lí");
+                st.setString(index++, "Quản Lý");
             if(status == 1)
                 st.setInt(index++, 1);
             else if(status == 2)

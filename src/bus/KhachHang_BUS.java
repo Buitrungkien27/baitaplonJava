@@ -57,7 +57,7 @@ public class KhachHang_BUS {
 
 
     public boolean createKH(String ten, Date ns, String sdt, String dc, Boolean gt, String cccd) throws Exception {
-        System.out.println("Test3:" + sdt);
+//        System.out.println("Test3:" + sdt);
         String idMoi = generateID(ns, gt);
 
         // Create new customer object

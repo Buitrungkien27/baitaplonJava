@@ -254,7 +254,22 @@ ADD
 ALTER TABLE Tau
 DROP COLUMN soLuongToa;
 
+delete from TaiKhoan
+where maNV = 'NV120042024001'
+delete from NhanVien
+where maNV = 'NV120042024001'
+INSERT INTO NhanVien (maNV, tenNV, chucVu, trangThai, ngaySinh, gioiTinh, sdt, cccd, ngayVaoLam, diaChi)
+VALUES (N'NV120042024001', N'Bùi Tấn Phát', N'Quản Lý', 1, CAST(N'2004-02-14' AS Date), 1, N'0929528914', N'051204000290', CAST(N'2024-10-14' AS Date), N'Quận Bình Tân, TP HCM');
 
+INSERT INTO TaiKhoan (maNV, password)
+VALUES ('NV120042024001', N'c22a880fe966e5b74a1f5adaefcac0ad');
 
+DELETE FROM Tau;
+EXEC sp_rename 'dbo.Tau.danhSachGhe', 'loaiToa', 'COLUMN';
+
+ALTER TABLE Tau
+ADD trangThai NVARCHAR(50);
+
+ALTER TABLE Tau ADD soGhe INT;
 
 

@@ -3,6 +3,7 @@ package gui;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import javax.swing.JOptionPane;
 import javax.swing.*;
@@ -24,8 +25,8 @@ public class BanVe_GUI extends JPanel {
     private static final String USER = "sa";
     private static final String PASSWORD = "sa123";
 
-    private JTextField txtHoTen, txtSDT, txtMaHD, txtTienKhachDua, txtTienThua, txtViTriGhe, txtGiaVe;
-    private JComboBox<String> comboGaDi, comboGaDen, comboLoaiToa;
+    private JTextField txtHoTen, txtSDT, txtMaHD, txtTienKhachDua, txtTienThua, txtViTriGhe, txtGiaVe, txtgaDi, txtgaDen, txtMaTau;
+    private JComboBox<String> comboLoaiToa;
     private JDateChooser dateNgayTao;
     private JTable table;
     private DefaultTableModel model;
@@ -33,125 +34,137 @@ public class BanVe_GUI extends JPanel {
     private Map<String, Set<String>> gheDaDatTheoToa = new HashMap<>();  // Lưu trữ các ghế đã đặt theo từng toa
     private JButton[] buttonsGhe;  // Lưu các button ghế để có thể thay đổi màu
     private Set<String> gheTamDat = new HashSet<>(); // Lưu trữ ghế được chọn tạm thời trong lần đặt hiện tại
-
+    private Color[] colors = {Color.GREEN, Color.YELLOW, Color.ORANGE, Color.PINK}; // Màu theo loại toa
     public BanVe_GUI() {
         setLayout(new BorderLayout());
         loadTicketData();
-        // Panel chính chia thành 2 phần
-        JPanel pnlMain = new JPanel(new GridLayout(1, 2, 10, 10)); // Chia làm 2 bảng
-
-        // Panel bên trái chứa bảng danh sách vé
+        
+         // Phần trên - hiển thị bảng danh sách vé
         JPanel pnlDanhSachVe = new JPanel(new BorderLayout());
-        String[] columnNames = {"Ga đi", "Ga đến", "Họ và tên", "Số điện thoại", "Mã vé tàu ", "Ngày tạo", "Tiền khách đưa", "Tiền thừa", "Loại Toa", "Vị trí ghế", "Giá vé"};
+        String[] columnNames = {"Ga đi", "Ga đến", "Họ và tên", "Số điện thoại", "Mã vé tàu", "Ngày tạo", "Tiền khách đưa", "Tiền thừa", "Loại Toa", "Vị trí ghế", "Giá vé", "Mã Tàu"};
         model = new DefaultTableModel(columnNames, 0);
         table = new JTable(model);
-        table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);  // Tắt tự động điều chỉnh kích thước cột
+       // table.setPreferredScrollableViewportSize(new Dimension(900, 180));
+        pnlDanhSachVe.add(new JScrollPane(table), BorderLayout.CENTER);
+     // Đặt kích thước cho bảng để bảng dữ liệu dài hơn và hiển thị nhiều thông tin hơn
+        table.setPreferredScrollableViewportSize(new Dimension(900, 300)); // Tăng chiều cao của bảng lên 350
+        JScrollPane tableScrollPane = new JScrollPane(table);
+        tableScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+        tableScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        pnlDanhSachVe.add(tableScrollPane, BorderLayout.CENTER);
+        add(pnlDanhSachVe, BorderLayout.NORTH);  // Đặt bảng lên trên cùng
 
-        // Đặt kích thước cho từng cột để hiển thị dữ liệu đầy đủ hơn
-        setColumnWidths(table, new int[]{80, 100, 150, 100, 100, 100, 120, 100, 80, 80, 80});
-
-        JScrollPane scrollPane = new JScrollPane(table, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-        pnlDanhSachVe.add(scrollPane, BorderLayout.CENTER);
-
-        // Panel bên phải chứa phần thông tin và ghế ngồi
-        JPanel pnlThongTinVaGhe = new JPanel(new BorderLayout());
-
-        // Panel thông tin
-        JPanel pnlThongTin = new JPanel(new GridBagLayout());
+        // Phần dưới - chia làm 2
+        JPanel pnlDuoi = new JPanel(new GridLayout(1, 2, 10, 10)); // Chia làm 2 bảng
+        
+     // Bên trái - Phần nhập thông tin (sử dụng GridBagLayout)
+        JPanel pnlNhapThongTin = new JPanel(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(5, 5, 5, 5); // Khoảng cách giữa các thành phần
         gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.insets = new Insets(5, 5, 5, 5);
 
-        // Tạo các thành phần UI
-        JLabel lblGaDi = new JLabel("Ga đi:");
-        JLabel lblGaDen = new JLabel("Ga đến:");
-        JLabel lblHoTen = new JLabel("Họ và tên:");
-        JLabel lblSDT = new JLabel("Số điện thoại:");
-        JLabel lblMaHD = new JLabel("Mã vé tàu :");
-        JLabel lblTienKhachDua = new JLabel("Tiền khách đưa:");
-        lblTienKhachDua.setPreferredSize(new Dimension(120, 20)); // Điều chỉnh kích thước để tránh bị cắt chữ
-        JLabel lblTienThua = new JLabel("Tiền thừa:");
-        JLabel lblNgayTao = new JLabel("Ngày tạo:");
-        JLabel lblLoaiToa = new JLabel("Loại Toa:");
-        JLabel lblViTriGhe = new JLabel("Vị trí ghế:");
-        JLabel lblGiaVe = new JLabel("Giá vé:");
+        // Thiết lập các nhãn và ô nhập liệu để chia thành 2 cột
+        String[] labels = {"Ga đi:", "Ga đến:", "Họ và tên:", "Số điện thoại:", "Mã vé tàu:", "Ngày tạo:", "Tiền khách đưa:", "Tiền thừa:", "Loại Toa:", "Giá vé:" , "Mã Tàu:"};
+        JComponent[] fields = {
+            txtgaDi = new JTextField(), txtgaDen = new JTextField(),
+            txtHoTen = new JTextField(), txtSDT = new JTextField(),
+            txtMaHD = new JTextField(), dateNgayTao = new JDateChooser(),
+            txtTienKhachDua = new JTextField(), txtTienThua = new JTextField(),
+            comboLoaiToa = new JComboBox<>(new String[]{"Toa 1", "Toa 2", "Toa 3", "Toa 4", "Toa 5"}),
+            txtGiaVe = new JTextField(), txtMaTau = new JTextField()
+        };
+        // Add this ActionListener for txtMaTau here to fetch data from the database when a train ID is entered
+        txtMaTau.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String maTau = txtMaTau.getText().trim();
+                
+                if (!maTau.isEmpty()) {
+                    try (Connection conn = DriverManager.getConnection(DB_URL, USER, PASSWORD)) {
+                        String sql = "SELECT gaDi, gaDen, loaiToa FROM Tau WHERE maTau = ?";
+                        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                            pstmt.setString(1, maTau);
+                            ResultSet rs = pstmt.executeQuery();
+                            
+                            if (rs.next()) {
+                                // Populate the fields with the fetched data
+                                txtgaDi.setText(rs.getString("gaDi"));
+                                txtgaDen.setText(rs.getString("gaDen"));
+                                comboLoaiToa.setSelectedItem(rs.getString("loaiToa"));
+                            } else {
+                                // Clear fields if no data is found
+                                JOptionPane.showMessageDialog(null, "Không tìm thấy tàu với mã tàu này.", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+                                txtgaDi.setText("");
+                                txtgaDen.setText("");
+                                comboLoaiToa.setSelectedIndex(0);
+                            }
+                        }
+                    } catch (SQLException ex) {
+                        JOptionPane.showMessageDialog(null, "Lỗi khi tìm kiếm tàu: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+                    }
+                }
+            }
+        });
+        txtSDT.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String sdt = txtSDT.getText();
+                if (!sdt.isEmpty()) {
+                    try (Connection conn = DriverManager.getConnection(DB_URL, USER, PASSWORD)) {
+                        String sql = "SELECT tenKH FROM KhachHang WHERE sdt = ?";
+                        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                            pstmt.setString(1, sdt);
+                            ResultSet rs = pstmt.executeQuery();
+                            if (rs.next()) {
+                                // Lấy tên khách hàng từ kết quả truy vấn
+                                String hoTen = rs.getString("tenKH");
+                                txtHoTen.setText(hoTen);
+                            } else {
+                                // Nếu không tìm thấy khách hàng, thông báo cho người dùng
+                                JOptionPane.showMessageDialog(null, "Không tìm thấy khách hàng với số điện thoại này.", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+                                txtHoTen.setText(""); // Xóa nội dung trong txtHoTen nếu không tìm thấy
+                            }
+                        }
+                    } catch (SQLException ex) {
+                        JOptionPane.showMessageDialog(null, "Lỗi khi tìm kiếm khách hàng: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+                    }
+                }
+            }
+        });
+        // Sắp xếp các nhãn và trường nhập liệu theo 2 cột
+        for (int i = 0; i < labels.length; i++) {
+            gbc.gridx = (i % 2) * 2; // Cột nhãn
+            gbc.gridy = i / 2;
+            pnlNhapThongTin.add(new JLabel(labels[i]), gbc);
+            
+            gbc.gridx = (i % 2) * 2 + 1; // Cột ô nhập
+            pnlNhapThongTin.add(fields[i], gbc);
+        }
 
-        txtHoTen = new JTextField(15);
-        txtSDT = new JTextField(15);
-        txtMaHD = new JTextField(15);
-        txtTienKhachDua = new JTextField(15);
-        txtTienThua = new JTextField(15);
-        txtViTriGhe = new JTextField(15);
-        txtGiaVe = new JTextField(15); // Thêm trường nhập cho Giá vé
-        txtGiaVe.setEditable(false);   // Ô Giá vé chỉ hiển thị, không cho chỉnh sửa
+        pnlDuoi.add(pnlNhapThongTin); // Thêm phần nhập thông tin vào bên trái của pnlDuoi
 
-        comboGaDi = new JComboBox<>(new String[]{"Sài Gòn"});
-        comboGaDen = new JComboBox<>(new String[]{"An Giang", "Bà Rịa - Vũng Tàu", "Bạc Liêu", "Bắc Giang", "Bắc Kạn", "Bắc Ninh",
-                "Bến Tre", "Bình Dương", "Bình Định", "Bình Phước", "Bình Thuận", "Cà Mau",
-                "Cao Bằng", "Cần Thơ", "Đà Nẵng", "Đắk Lắk", "Đắk Nông", "Điện Biên", "Đồng Nai",
-                "Đồng Tháp", "Gia Lai", "Hà Giang", "Hà Nam", "Hà Nội", "Hà Tĩnh", "Hải Dương",
-                "Hải Phòng", "Hậu Giang", "Hòa Bình", "Hưng Yên", "Khánh Hòa", "Kiên Giang",
-                "Kon Tum", "Lai Châu", "Lâm Đồng", "Lạng Sơn", "Lào Cai", "Long An", "Nam Định",
-                "Nghệ An", "Ninh Bình", "Ninh Thuận", "Phú Thọ", "Phú Yên", "Quảng Bình",
-                "Quảng Nam", "Quảng Ngãi", "Quảng Ninh", "Quảng Trị", "Sóc Trăng", "Sơn La",
-                "Tây Ninh", "Thái Bình", "Thái Nguyên", "Thanh Hóa", "Thừa Thiên Huế", "Tiền Giang",
-                "TP Hồ Chí Minh", "Trà Vinh", "Tuyên Quang", "Vĩnh Long", "Vĩnh Phúc", "Yên Bái"});
-        comboLoaiToa = new JComboBox<>(new String[]{"Toa 1", "Toa 2", "Toa 3", "Toa 4", "Toa 5"});
 
-        dateNgayTao = new JDateChooser();
-        dateNgayTao.setDateFormatString("dd/MM/yyyy");
+        pnlDuoi.add(pnlNhapThongTin); // Thêm phần nhập thông tin vào bên trái của pnlDuoi
+        JButton btnThanhToan = new JButton("Thanh Toán");
+        gbc.gridx = 0;
+        gbc.gridy = (labels.length / 2) + 1; // Đặt nó ở hàng cuối cùng
+        gbc.gridwidth = 2; // Trải rộng qua hai cột
+        gbc.anchor = GridBagConstraints.CENTER; 
+        pnlNhapThongTin.add(btnThanhToan, gbc);
+        // Bên phải - Phần chọn ghế
+        JPanel pnlChonGhe = new JPanel(new GridLayout(5, 5, 5, 5));
+        buttonsGhe = new JButton[25];
+        for (int i = 0; i < 25; i++) {
+            buttonsGhe[i] = new JButton("A" + (i + 1));
+            buttonsGhe[i].setBackground(Color.GREEN);
+            pnlChonGhe.add(buttonsGhe[i]);
+        }
+        pnlDuoi.add(pnlChonGhe);  // Thêm phần chọn ghế vào bên phải
 
-        // Đặt các thành phần vào panel thông tin
-        gbc.gridx = 0; gbc.gridy = 0; pnlThongTin.add(lblGaDi, gbc);
-        gbc.gridx = 1; pnlThongTin.add(comboGaDi, gbc);
-        gbc.gridx = 2; pnlThongTin.add(lblGaDen, gbc);
-        gbc.gridx = 3; pnlThongTin.add(comboGaDen, gbc);
-
-        gbc.gridx = 0; gbc.gridy = 1; pnlThongTin.add(lblHoTen, gbc);
-        gbc.gridx = 1; pnlThongTin.add(txtHoTen, gbc);
-        gbc.gridx = 2; pnlThongTin.add(lblSDT, gbc);
-        gbc.gridx = 3; pnlThongTin.add(txtSDT, gbc);
-
-        gbc.gridx = 0; gbc.gridy = 2; pnlThongTin.add(lblMaHD, gbc);
-        gbc.gridx = 1; pnlThongTin.add(txtMaHD, gbc);
-        gbc.gridx = 2; pnlThongTin.add(lblNgayTao, gbc);
-        gbc.gridx = 3; pnlThongTin.add(dateNgayTao, gbc);
-
-        gbc.gridx = 0; gbc.gridy = 3; pnlThongTin.add(lblTienKhachDua, gbc);
-        gbc.gridx = 1; pnlThongTin.add(txtTienKhachDua, gbc);
-        gbc.gridx = 2; pnlThongTin.add(lblTienThua, gbc);
-        gbc.gridx = 3; pnlThongTin.add(txtTienThua, gbc);
-
-        gbc.gridx = 0; gbc.gridy = 4; pnlThongTin.add(lblLoaiToa, gbc);
-        gbc.gridx = 1; pnlThongTin.add(comboLoaiToa, gbc);
-        gbc.gridx = 2; pnlThongTin.add(lblViTriGhe, gbc);
-        gbc.gridx = 3; pnlThongTin.add(txtViTriGhe, gbc);
-
-        // Thêm Giá vé vào dưới Loại Toa
-        gbc.gridx = 0; gbc.gridy = 5; pnlThongTin.add(lblGiaVe, gbc);
-        gbc.gridx = 1; pnlThongTin.add(txtGiaVe, gbc);
-
-        // Nút Thanh toán
-        JButton btnThanhToan = new JButton("Thanh toán");
-        gbc.gridx = 2; gbc.gridy = 6; pnlThongTin.add(btnThanhToan, gbc);
-
-        // Panel ghế ngồi
-        JPanel pnlGhe = new JPanel(new GridLayout(5, 5, 5, 5));
-        String[] ghe = {"A1", "A2", "A3", "A4", "A5", "B1", "B2", "B3", "B4", "B5",
-                        "C1", "C2", "C3", "C4", "C5", "D1", "D2", "D3", "D4", "D5"};
-
-        buttonsGhe = new JButton[ghe.length];
-
-        // Màu ghế theo toa
-        Color[] colors = {Color.GREEN, Color.GREEN, Color.YELLOW, Color.ORANGE, Color.PINK}; // Xanh: cứng, Vàng: mềm, Cam: nằm cứng, Hồng: nằm mềm
-
-        // Khởi tạo ghế và màu ban đầu dựa trên toa
-        for (int i = 0; i < ghe.length; i++) {
-            buttonsGhe[i] = new JButton(ghe[i]);
-            buttonsGhe[i].setBackground(colors[0]); // Đặt màu ban đầu cho tất cả ghế
-            pnlGhe.add(buttonsGhe[i]);
+        add(pnlDuoi, BorderLayout.CENTER);  // Đặt phần dưới vào giữa
 
             // Thêm sự kiện khi nhấn chọn hoặc hủy ghế
+            for (int i = 0; i < buttonsGhe.length; i++) {
             buttonsGhe[i].addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent e) {
@@ -224,8 +237,8 @@ public class BanVe_GUI extends JPanel {
                         return;
                     }
 
-                    String gaDi = (String) comboGaDi.getItemAt(0);
-                    String gaDen = (String) comboGaDen.getSelectedItem();
+                    String gaDi = (String) txtgaDi.getText();
+                    String gaDen = (String) txtgaDen.getText();
                     Date ngayTao = dateNgayTao.getDate();
                     SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
                     String strNgayTao = (ngayTao != null) ? sdf.format(ngayTao) : "";
@@ -285,17 +298,6 @@ public class BanVe_GUI extends JPanel {
                 resetTempSeats(); // Trả ghế chưa thanh toán về màu ban đầu
             }
         });
-
-        // Thêm các panel vào pnlThongTinVaGhe
-        pnlThongTinVaGhe.add(pnlThongTin, BorderLayout.NORTH);
-        pnlThongTinVaGhe.add(pnlGhe, BorderLayout.CENTER);
-
-        // Thêm pnlDanhSachVe và pnlThongTinVaGhe vào pnlMain
-        pnlMain.add(pnlDanhSachVe);
-        pnlMain.add(pnlThongTinVaGhe);
-
-        // Thêm pnlMain vào giao diện chính
-        add(pnlMain, BorderLayout.CENTER);
 
         JLabel lblGhiChu = new JLabel("Xanh: Ngồi cứng (50k), Vàng: Ngồi mềm (100k), Cam: Nằm cứng (150k), Hồng: Nằm mềm (200k), Trắng: Ghế đã đặt.");
         add(lblGhiChu, BorderLayout.PAGE_END);
@@ -394,7 +396,7 @@ public class BanVe_GUI extends JPanel {
 
     // Phương thức tính tổng giá vé và hiển thị lên giao diện
     private void updateGiaVe() {
-        String gaDen = (String) comboGaDen.getSelectedItem();
+        String gaDen = (String) txtgaDen.getText();
         int giaCoBan = getGiaCoBan(gaDen);
 
         int giaGhe = 0;

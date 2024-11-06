@@ -1,5 +1,7 @@
 package gui;
 import com.formdev.flatlaf.FlatClientProperties;
+
+import bus.NhanVien_BUS;
 import entity.Employee;
 import entity.NhanVien;
 import entity.Store;
@@ -34,6 +36,7 @@ public class NhanVien_GUI extends javax.swing.JPanel {
     private DefaultComboBoxModel cmbModel_thongTin;
     private DefaultButtonModel btnModel_gioiTinh;
     private DefaultButtonModel btnModel_trangThai;
+    private NhanVien_BUS nv_BUS = new NhanVien_BUS();
     private static CellStyle cellStyleFormatNumber = null;
     // Khai báo thông tin kết nối cơ sở dữ liệu
     private static final String DB_URL = "jdbc:sqlserver://localhost:1433;databaseName=QLBanVe";
@@ -42,8 +45,6 @@ public class NhanVien_GUI extends javax.swing.JPanel {
     public NhanVien_GUI() {
         initComponents();
         init();
-        loadDataToTable();
-
     }
     
     private void init() {
@@ -53,13 +54,13 @@ public class NhanVien_GUI extends javax.swing.JPanel {
             int rowIndex = tbl_dsNV.getSelectedRow();
             if(rowIndex == -1)
                 return;
-            
-            String maNV = tblModel_NhanVien.getValueAt(rowIndex, 0).toString();
+            String employeeID = tblModel_NhanVien.getValueAt(rowIndex, 0).toString();
+            this.nhanVien = nv_BUS.getNhanVien(employeeID);
             renderCurrentEmployee();
         });
-        cmbModel_chucVu = new DefaultComboBoxModel(new String[]{"Chức vụ", "Nhân viên Bán Vé", "Quản lý"});
+        cmbModel_chucVu = new DefaultComboBoxModel(new String[]{"Chức vụ", "Nhân Viên Bán Vé", "Quản Lý"});
         cmb_timChucVu.setModel(cmbModel_chucVu);
-        cmbModel_thongTin = new DefaultComboBoxModel(new String[]{"Nhân viên Bán Vé", "Quản lý"});
+        cmbModel_thongTin = new DefaultComboBoxModel(new String[]{"Nhân Viên Bán Vé", "Quản Lý"});
         cmb_chucVu.setModel(cmbModel_thongTin);
         cmbModel_trangThai = new DefaultComboBoxModel(new String[]{"Trạng thái", "Đang làm việc", "Đã nghỉ"});
         cmb_trangThai.setModel(cmbModel_trangThai);
@@ -68,7 +69,9 @@ public class NhanVien_GUI extends javax.swing.JPanel {
         group_gender.add(rdb_nu);
         group_statusEmp.add(rdb_dangLam);
         group_statusEmp.add(rdb_daNghi);
+        renderEmployeeTable(nv_BUS.getAllNhanVien());
     }
+    
     private void renderCurrentEmployee() {
         txt_maNV.setText(nhanVien.getMaNV());
         txt_tenNV.setText(nhanVien.getTenNV());
@@ -84,23 +87,22 @@ public class NhanVien_GUI extends javax.swing.JPanel {
         else
             rdb_daNghi.setSelected(true);
         if(nhanVien.getChucVu().equals("Nhân Viên Bán Vé"))
-            cmbModel_thongTin.setSelectedItem("Nhân Viên Bán Vé");
+            cmbModel_thongTin.setSelectedItem("Nhân Viên Bán Hàng");
         else
         	cmbModel_thongTin.setSelectedItem("Quản Lý");
         chonNgaySinh.setDate(nhanVien.getNgaySinh());
         chonNgayVaoLam.setDate(nhanVien.getNgayVaoLam());
-        //chooseDateStart.setDate();
     }
     
-    private void renderEmployeeTable(ArrayList<Employee> employeeList) {
+    private void renderEmployeeTable(ArrayList<NhanVien> employeeList) {
         tblModel_NhanVien.setRowCount(0);
         String status;
-        for (Employee employee : employeeList) {
-            if(employee.isStatus())
+        for (NhanVien employee : employeeList) {
+            if(employee.getTrangThai())
                 status = "Đang làm việc";
             else
                 status = "Đã nghỉ";
-            String[] newRow = {employee.getEmployeeID(), employee.getName(), employee.getDateOfBirth().toString(), status};
+            String[] newRow = {employee.getMaNV(), employee.getTenNV(), employee.getNgaySinh().toString(), status};
             tblModel_NhanVien.addRow(newRow);
         }        
     }
@@ -152,6 +154,7 @@ public class NhanVien_GUI extends javax.swing.JPanel {
         }
         return true;
     }
+    
     private NhanVien getCurrentValue() {
     	String ma = txt_maNV.getText();
         String ten = txt_tenNV.getText();
@@ -171,6 +174,28 @@ public class NhanVien_GUI extends javax.swing.JPanel {
         NhanVien nv = new NhanVien(ma, cccd, cv, tt, ten, sdt, gt, ns, dc, nvl);
         return nv;
     }
+    
+    private NhanVien getNewValue() throws Exception {
+        String name = txt_tenNV.getText();
+        String phoneNumber = txt_sdt.getText();
+        String address = txt_diaChi.getText();
+        String citizenID = txt_cccd.getText();
+        String role = (String) cmb_chucVu.getSelectedItem();
+        boolean gender = false;
+        if(rdb_nam.isSelected())
+            gender = true;
+        boolean status = false;
+        if(rdb_dangLam.isSelected())
+            status = true;
+        Date dateOfBirth = chonNgaySinh.getDate();
+        Date dateStart = chonNgayVaoLam.getDate();
+        String employeeID = nv_BUS.generateID(gender, dateOfBirth, dateStart);
+        
+        NhanVien employee = new NhanVien(employeeID, citizenID, role, status, name, phoneNumber, gender, dateOfBirth, address, dateStart);
+        //Account account = new Account(employee);
+        return employee;
+    }
+    
     private void createExcel(ArrayList<Employee> listEmp, String filePath) {
         try {
             SXSSFWorkbook workbook = new SXSSFWorkbook();
@@ -787,68 +812,91 @@ public class NhanVien_GUI extends javax.swing.JPanel {
             Notifications.getInstance().show(Notifications.Type.INFO, "Vui lòng điền mã nhân viên");
             return;
         }
-
+        renderEmployeeTable(nv_BUS.searchById(searchQuery));
     }
 
     private void btn_searchFilterEmpActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_searchFilterEmpActionPerformed
         int role = cmb_timChucVu.getSelectedIndex();
         int status = cmb_trangThai.getSelectedIndex();
-
+        renderEmployeeTable(nv_BUS.filter(role, status));
     }
 
     private void btn_reloadEmpActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_reloadEmpActionPerformed
-
+    	renderEmployeeTable(nv_BUS.getAllNhanVien());
         renderEmployeeInfor();
     }
 
     private void btn_updateEmpActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_updateEmpActionPerformed
-       
-        if(tbl_dsNV.getSelectedRow() == -1) {
+    	if(tbl_dsNV.getSelectedRow() == -1) {
             Notifications.getInstance().show(Notifications.Type.ERROR, "Vui lòng chọn nhân viên để cập nhật");
             return;
         }
-
+        try {
+            NhanVien newEmployee = getCurrentValue();
+            if(nv_BUS.updateNV(newEmployee)) {
+                Notifications.getInstance().show(Notifications.Type.SUCCESS, "Cập nhật thông tin thành công");
+                renderEmployeeTable(nv_BUS.getAllNhanVien());
+                renderEmployeeInfor();
+            }
+            else
+                Notifications.getInstance().show(Notifications.Type.ERROR, "Cập nhật không thành công");
+        } catch (Exception ex) {
+            Notifications.getInstance().show(Notifications.Type.ERROR, ex.getMessage());
+        }
     }
 
    
     private void btn_addEmpActionPerformed(java.awt.event.ActionEvent evt) {
-        // Kiểm tra tính hợp lệ của dữ liệu nhập vào
-        if (!validEmployee()) {
-            return; // Nếu dữ liệu không hợp lệ, dừng hàm
-        }
-
-        // Lấy dữ liệu của nhân viên từ các trường nhập liệu
-        NhanVien newNhanVien = getCurrentValue();
-
-        // Thêm dữ liệu vào JTable (tbl_dsNV)
-        String status = newNhanVien.getTrangThai() ? "Đang làm việc" : "Đã nghỉ";
-        tblModel_NhanVien.addRow(new Object[]{
-            newNhanVien.getMaNV(),              // Mã nhân viên
-            newNhanVien.getTenNV(),             // Tên nhân viên
-            newNhanVien.getNgaySinh().toString(), // Ngày sinh
-            status                              // Trạng thái làm việc
-        });
-        // Thêm dữ liệu vào cơ sở dữ liệu
-        try (Connection conn = DriverManager.getConnection(DB_URL, USER, PASSWORD)) {
-            // Câu lệnh SQL để thêm dữ liệu vào bảng NhanVien
-            String sql = "INSERT INTO NhanVien (maNV, tenNV, chucVu, trangThai, ngaySinh, gioiTinh, sdt, cccd, ngayVaoLam, diaChi) " +
-                         "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-            try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-                pstmt.setString(1, newNhanVien.getMaNV());          // Mã nhân viên
-                pstmt.setString(2, newNhanVien.getTenNV());         // Tên nhân viên
-                pstmt.setString(3, newNhanVien.getChucVu());        // Chức vụ
-                pstmt.setBoolean(4, newNhanVien.getTrangThai());    // Trạng thái
-                pstmt.setDate(5, new java.sql.Date(newNhanVien.getNgaySinh().getTime())); // Ngày sinh
-                pstmt.setBoolean(6, newNhanVien.isGioiTinh());      // Giới tính
-                pstmt.setString(7, newNhanVien.getSdt());           // Số điện thoại
-                pstmt.setString(8, newNhanVien.getCccd());          // CCCD
-                pstmt.setDate(9, new java.sql.Date(newNhanVien.getNgayVaoLam().getTime())); // Ngày vào làm
-                pstmt.setString(10, newNhanVien.getDiaChi());       // Địa chỉ
-                pstmt.executeUpdate(); // Thực thi câu lệnh thêm dữ liệu
-                Notifications.getInstance().show(Notifications.Type.SUCCESS, "Nhân viên đã được thêm thành công!");
+//        // Kiểm tra tính hợp lệ của dữ liệu nhập vào
+//        if (!validEmployee()) {
+//            return; // Nếu dữ liệu không hợp lệ, dừng hàm
+//        }
+//
+//        // Lấy dữ liệu của nhân viên từ các trường nhập liệu
+//        NhanVien newNhanVien = getCurrentValue();
+//
+//        // Thêm dữ liệu vào JTable (tbl_dsNV)
+//        String status = newNhanVien.getTrangThai() ? "Đang làm việc" : "Đã nghỉ";
+//        tblModel_NhanVien.addRow(new Object[]{
+//            newNhanVien.getMaNV(),              // Mã nhân viên
+//            newNhanVien.getTenNV(),             // Tên nhân viên
+//            newNhanVien.getNgaySinh().toString(), // Ngày sinh
+//            status                              // Trạng thái làm việc
+//        });
+//        // Thêm dữ liệu vào cơ sở dữ liệu
+//        try (Connection conn = DriverManager.getConnection(DB_URL, USER, PASSWORD)) {
+//            // Câu lệnh SQL để thêm dữ liệu vào bảng NhanVien
+//            String sql = "INSERT INTO NhanVien (maNV, tenNV, chucVu, trangThai, ngaySinh, gioiTinh, sdt, cccd, ngayVaoLam, diaChi) " +
+//                         "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+//            try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+//                pstmt.setString(1, newNhanVien.getMaNV());          // Mã nhân viên
+//                pstmt.setString(2, newNhanVien.getTenNV());         // Tên nhân viên
+//                pstmt.setString(3, newNhanVien.getChucVu());        // Chức vụ
+//                pstmt.setBoolean(4, newNhanVien.getTrangThai());    // Trạng thái
+//                pstmt.setDate(5, new java.sql.Date(newNhanVien.getNgaySinh().getTime())); // Ngày sinh
+//                pstmt.setBoolean(6, newNhanVien.isGioiTinh());      // Giới tính
+//                pstmt.setString(7, newNhanVien.getSdt());           // Số điện thoại
+//                pstmt.setString(8, newNhanVien.getCccd());          // CCCD
+//                pstmt.setDate(9, new java.sql.Date(newNhanVien.getNgayVaoLam().getTime())); // Ngày vào làm
+//                pstmt.setString(10, newNhanVien.getDiaChi());       // Địa chỉ
+//                pstmt.executeUpdate(); // Thực thi câu lệnh thêm dữ liệu
+//                Notifications.getInstance().show(Notifications.Type.SUCCESS, "Nhân viên đã được thêm thành công!");
+//            }
+//        } catch (SQLException ex) {
+//            JOptionPane.showMessageDialog(this, "Lỗi khi lưu dữ liệu vào cơ sở dữ liệu: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+//        }
+    	try {
+            NhanVien newEmployee = getNewValue();
+            if(newEmployee == null) {
+                Notifications.getInstance().show(Notifications.Type.ERROR, "Vui lòng nhập đầy đủ thông tin");
+                return;
             }
-        } catch (SQLException ex) {
-            JOptionPane.showMessageDialog(this, "Lỗi khi lưu dữ liệu vào cơ sở dữ liệu: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+            nv_BUS.addNewNV(newEmployee);
+            renderEmployeeInfor();
+            renderEmployeeTable(nv_BUS.getAllNhanVien());
+            Notifications.getInstance().show(Notifications.Type.SUCCESS, "Thêm nhân viên thành công");
+        } catch (Exception ex) {
+            Notifications.getInstance().show(Notifications.Type.ERROR, ex.getMessage());
         }
     }
 
@@ -856,14 +904,32 @@ public class NhanVien_GUI extends javax.swing.JPanel {
     
 
     private void txt_searchEmpKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_txt_searchEmpKeyPressed
-
+    	if (evt.getKeyCode() == KeyEvent.VK_ENTER) {
+            String searchQuery = txt_tim.getText();
+            if (searchQuery.isBlank()) {
+                Notifications.getInstance().show(Notifications.Type.INFO, "Vui lòng điền mã nhân viên");
+                return;
+            }
+            renderEmployeeTable(nv_BUS.searchById(searchQuery));
+        }
     }
 
     private void btn_changePassActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_changePassActionPerformed
+    	if(nhanVien == null) {
+            Notifications.getInstance().show(Notifications.Type.WARNING, "Vui lòng chọn nhân viên cần đặt lại mật khẩu");
+            return;
+        }
+        String id = nhanVien.getMaNV();
+        System.out.println(id);
+        if(nv_BUS.updatePassword(id))
+            Notifications.getInstance().show(Notifications.Type.SUCCESS, "Đặt lại mật khẩu thành công");
+        else
+            Notifications.getInstance().show(Notifications.Type.ERROR, "Đặt lại mật khẩu không thành công");
     }
 
     private void btn_clearValueActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_clearValueActionPerformed
-
+    	 renderEmployeeTable(nv_BUS.getAllNhanVien());
+         renderEmployeeInfor();
     }
 
     private void btn_printFileActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_printFileActionPerformed

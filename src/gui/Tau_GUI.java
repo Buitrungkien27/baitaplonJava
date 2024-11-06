@@ -16,17 +16,19 @@ import java.awt.event.ActionListener;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.util.Calendar;
 
 public final class Tau_GUI extends JPanel {
-    private JLabel lblMaTau, lblTenTau, lblDsGhe, lblTrangThai, lblGaDi, lblGaDen, lblTGDi, lblTGDen;
-    private JTextField txtMaTau, txtTenTau, txtDsGhe;
+    private JLabel lblMaTau, lblTenTau, lblLoaiToa, lblTrangThai, lblGaDi, lblGaDen, lblTGDi, lblTGDen;
+    private JTextField txtMaTau, txtTenTau, txtLoaiToa;
     private DefaultTableModel modelTau;
     private JTable tbl_DsTau;
+    private JTextField txtTrangThai; 
+    private JTextField  txtSoGhe;
     private JComboBox<String> comboTrangThai, comboGaDi, comboGaDen, comboLoaiToa;
     private JButton btnThem, btnXoa, btnCapNhat, btnXoaTrang;
     private JDateChooser dateChooserDi, dateChooserDen;
-    private static int tauCounter = 1;
     private static final String DB_URL = "jdbc:sqlserver://localhost:1433;databaseName=QLBanVe";
     private static final String USER = "sa";
     private static final String PASSWORD = "sa123";
@@ -34,21 +36,39 @@ public final class Tau_GUI extends JPanel {
     public Tau_GUI() {
         initComponents();
         init();
-        loadDataToTable();
+        loadDataToTable(); // Tải dữ liệu từ cơ sở dữ liệu khi khởi động
     }
 
     private void loadDataToTable() {
-        // Chức năng tải dữ liệu vào bảng nếu cần
-    }
+        modelTau.setRowCount(0); // Xóa dữ liệu cũ trong bảng
 
-    private String sinhMaTau() {
-        return "T" + String.format("%03d", tauCounter++);
+        try (Connection conn = DriverManager.getConnection(DB_URL, USER, PASSWORD)) {
+            String sql = "SELECT maTau, tenTau, loaiToa, gaDi, gaDen, thoiGianDi, thoiGianDen, soGhe FROM Tau";
+            try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                ResultSet rs = pstmt.executeQuery();
+                while (rs.next()) {
+                    Object[] row = {
+                        rs.getString("maTau"),
+                        rs.getString("tenTau"),
+                        rs.getString("loaiToa"),
+                        rs.getString("gaDi"),
+                        rs.getString("gaDen"),
+                        rs.getTimestamp("thoiGianDi"),
+                        rs.getTimestamp("thoiGianDen"),
+                        rs.getInt("soGhe")
+                    };
+                    modelTau.addRow(row); // Thêm dữ liệu vào bảng
+                }
+            }
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(null, "Lỗi khi tải dữ liệu từ cơ sở dữ liệu: " + e.getMessage());
+        }
     }
 
     public void init() {
         modelTau = new DefaultTableModel(new String[]{
-            "Mã tàu", "Tên tàu", "Danh sách ghế", "Ga đi", "Ga đến", "Thời gian đi", "Thời gian đến"}, 0);
-        
+            "Mã tàu", "Tên tàu", "Loại Toa", "Ga đi", "Ga đến", "Thời gian đi", "Thời gian đến", "Số ghế"}, 0);
+
         tbl_DsTau = new JTable(modelTau);
         tbl_DsTau.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
 
@@ -71,11 +91,13 @@ public final class Tau_GUI extends JPanel {
     private void renderCurrentTrain(int rowIndex) {
         txtMaTau.setText(modelTau.getValueAt(rowIndex, 0).toString());
         txtTenTau.setText(modelTau.getValueAt(rowIndex, 1).toString());
-        txtDsGhe.setText(modelTau.getValueAt(rowIndex, 2).toString());
+        comboLoaiToa.setSelectedItem(modelTau.getValueAt(rowIndex, 2).toString());
         comboGaDi.setSelectedItem(modelTau.getValueAt(rowIndex, 3).toString());
         comboGaDen.setSelectedItem(modelTau.getValueAt(rowIndex, 4).toString());
         dateChooserDi.setDate((java.util.Date) modelTau.getValueAt(rowIndex, 5));
         dateChooserDen.setDate((java.util.Date) modelTau.getValueAt(rowIndex, 6));
+        txtSoGhe.setText(modelTau.getValueAt(rowIndex, 7).toString());
+
         comboTrangThai.setSelectedIndex(0);
     }
 
@@ -88,8 +110,8 @@ public final class Tau_GUI extends JPanel {
         add(lblTitle, BorderLayout.NORTH);
 
         modelTau = new DefaultTableModel(new String[]{
-            "Mã tàu", "Tên tàu", "Danh sách ghế", "Ga đi", "Ga đến", "Thời gian đi", "Thời gian đến"}, 0);
-        
+            "Mã tàu", "Tên tàu", "Loại Toa", "Ga đi", "Ga đến", "Thời gian đi", "Thời gian đến" , "số Ghế"}, 0);
+
         tbl_DsTau = new JTable(modelTau);
         JScrollPane scrollPane = new JScrollPane(tbl_DsTau, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         add(scrollPane, BorderLayout.CENTER);
@@ -101,10 +123,10 @@ public final class Tau_GUI extends JPanel {
 
         JPanel panelInfoTau = new JPanel(new GridLayout(4, 2, 10, 10));
         panelInfoTau.setBorder(BorderFactory.createTitledBorder("Thông tin tàu"));
-        
+
         panelInfoTau.add(new JLabel("Mã tàu:"));
         txtMaTau = new JTextField();
-        txtMaTau.setEditable(false);
+        txtMaTau.setEditable(true);
         panelInfoTau.add(txtMaTau);
 
         panelInfoTau.add(new JLabel("Tên tàu:"));
@@ -116,13 +138,12 @@ public final class Tau_GUI extends JPanel {
         panelInfoTau.add(comboLoaiToa);
 
         panelInfoTau.add(new JLabel("Số ghế:"));
-        txtDsGhe = new JTextField();
-        ((AbstractDocument) txtDsGhe.getDocument()).setDocumentFilter(new NumericDocumentFilter());
-        panelInfoTau.add(txtDsGhe);
+        txtSoGhe = new JTextField();
+        panelInfoTau.add(txtSoGhe);
 
         JPanel panelGa = new JPanel(new GridLayout(2, 2, 10, 10));
         panelGa.setBorder(BorderFactory.createTitledBorder("Ga đi/Ga đến"));
-        
+
         panelGa.add(new JLabel("Ga đi:"));
         comboGaDi = new JComboBox<>(new String[]{"Sài Gòn"});
         panelGa.add(comboGaDi);
@@ -133,7 +154,7 @@ public final class Tau_GUI extends JPanel {
 
         JPanel panelThoiGian = new JPanel(new GridLayout(2, 2, 10, 10));
         panelThoiGian.setBorder(BorderFactory.createTitledBorder("Thời gian"));
-        
+
         panelThoiGian.add(new JLabel("Thời gian đi:"));
         dateChooserDi = new JDateChooser();
         dateChooserDi.setPreferredSize(new Dimension(180, 30));
@@ -150,9 +171,9 @@ public final class Tau_GUI extends JPanel {
 
         JPanel panelTrangThai = new JPanel(new GridLayout(1, 2, 10, 10));
         panelTrangThai.setBorder(BorderFactory.createTitledBorder("Trạng thái"));
-        
+
         panelTrangThai.add(new JLabel("Trạng thái:"));
-        comboTrangThai = new JComboBox<>(new String[]{"còn vé", "hết vé"});
+        comboTrangThai = new JComboBox<>(new String[]{"còn chỗ", "Đầy chỗ"});
         panelTrangThai.add(comboTrangThai);
 
         gbc.gridx = 0;
@@ -180,49 +201,49 @@ public final class Tau_GUI extends JPanel {
         btnThem.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
+                if (txtMaTau.getText().isEmpty()) {
+                    JOptionPane.showMessageDialog(null, "Mã tàu không được để trống!");
+                    return;
+                }
+
                 if (txtTenTau.getText().isEmpty()) {
                     JOptionPane.showMessageDialog(null, "Tên tàu không được để trống!");
                     return;
                 }
 
-                try {
-                    Integer.parseInt(txtDsGhe.getText());
-                } catch (NumberFormatException ex) {
-                    JOptionPane.showMessageDialog(null, "Danh sách ghế chỉ được phép chứa số!");
-                    return;
-                }
-
-                txtMaTau.setText(sinhMaTau());
-
                 try (Connection conn = DriverManager.getConnection(DB_URL, USER, PASSWORD)) {
-                    String sql = "INSERT INTO Tau (maTau, tenTau, danhSachGhe, gaDi, gaDen, thoiGianDi, thoiGianDen) VALUES (?, ?, ?, ?, ?, ?, ?)";
+                    String sql = "INSERT INTO Tau (maTau, tenTau, loaiToa, gaDi, gaDen, thoiGianDi, thoiGianDen, trangThai, soGhe) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
                     try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
                         pstmt.setString(1, txtMaTau.getText());
                         pstmt.setString(2, txtTenTau.getText());
-                        pstmt.setString(3, txtDsGhe.getText());
+                        pstmt.setString(3, comboLoaiToa.getSelectedItem().toString());
                         pstmt.setString(4, comboGaDi.getSelectedItem().toString());
                         pstmt.setString(5, comboGaDen.getSelectedItem().toString());
                         pstmt.setTimestamp(6, new java.sql.Timestamp(dateChooserDi.getDate().getTime()));
                         pstmt.setTimestamp(7, new java.sql.Timestamp(dateChooserDen.getDate().getTime()));
-
+                        pstmt.setString(8, comboTrangThai.getSelectedItem().toString());
+                        pstmt.setInt(9, Integer.parseInt(txtSoGhe.getText()));
                         pstmt.executeUpdate();
                         JOptionPane.showMessageDialog(null, "Dữ liệu đã được lưu vào cơ sở dữ liệu!");
+
+                        // Thêm dữ liệu mới vào bảng ngay lập tức
+                        Object[] row = {
+                            txtMaTau.getText(),
+                            txtTenTau.getText(),
+                            comboLoaiToa.getSelectedItem().toString(),
+                            comboGaDi.getSelectedItem(),
+                            comboGaDen.getSelectedItem(),
+                            dateChooserDi.getDate(),
+                            dateChooserDen.getDate(),
+                            txtSoGhe.getText(),
+                            comboTrangThai.getSelectedItem().toString()
+                        };
+                        modelTau.addRow(row); // Thêm dòng vào model của bảng
+                        clearInputFields(); // Xóa các trường nhập liệu
                     }
                 } catch (Exception ex) {
                     JOptionPane.showMessageDialog(null, "Lỗi khi lưu dữ liệu vào cơ sở dữ liệu: " + ex.getMessage());
                 }
-
-                Object[] row = {
-                    txtMaTau.getText(),
-                    txtTenTau.getText(),
-                    txtDsGhe.getText(),
-                    comboGaDi.getSelectedItem(),
-                    comboGaDen.getSelectedItem(),
-                    dateChooserDi.getDate(),
-                    dateChooserDen.getDate()
-                };
-                modelTau.addRow(row);
-                clearInputFields();
             }
         });
 
@@ -237,7 +258,7 @@ public final class Tau_GUI extends JPanel {
     private void clearInputFields() {
         txtMaTau.setText("");
         txtTenTau.setText("");
-        txtDsGhe.setText("");
+       // txtLoaiToa.setText("");
         comboGaDi.setSelectedIndex(0);
         comboGaDen.setSelectedIndex(0);
         dateChooserDi.setDate(Calendar.getInstance().getTime());

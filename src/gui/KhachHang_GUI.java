@@ -8,6 +8,8 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
+
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.table.DefaultTableCellRenderer;
@@ -101,6 +103,43 @@ public class KhachHang_GUI extends javax.swing.JPanel {
         rad_men.setSelected(true);
     }
 
+//    private boolean validKH() {
+//        if(txt_tenKH.getText().equals("")) {
+//            Notifications.getInstance().show(Notifications.Type.INFO, "Vui lòng nhập điền tên khách hàng");
+//            txt_tenKH.requestFocus();
+//            return false;
+//        }
+//        if(txt_dc.getText().equals("")) {
+//            Notifications.getInstance().show(Notifications.Type.INFO, "Vui lòng nhập địa chỉ khách hàng");
+//            txt_dc.requestFocus();
+//            return false;
+//        }
+//        if(txt_sdt.getText().equals("")) {
+//            Notifications.getInstance().show(Notifications.Type.INFO, "Vui lòng nhập SDT khách hàng");
+//            txt_sdt.requestFocus();
+//            return false;
+//        }
+//        if(txt_cccd.getText().equals("")) {
+//            Notifications.getInstance().show(Notifications.Type.INFO, "Vui lòng nhập mã CCCD của khách hàng");
+//            txt_cccd.requestFocus();
+//            return false;
+//        }
+//        if(!Pattern.matches("[0-9]{12}", txt_cccd.getText())) {
+//            Notifications.getInstance().show(Notifications.Type.INFO, "CCCD gồm 12 chữ số");
+//            txt_cccd.requestFocus();
+//            return false;
+//        }
+////        if(grp_gender.isSelected(btnModel_gioiTinh)) {
+////            Notifications.getInstance().show(Notifications.Type.INFO, "Vui lòng chọn giới tính nhân viên");
+////            return false;
+////        }
+////        if(group_statusEmp.isSelected(btnModel_trangThai)) {
+////            Notifications.getInstance().show(Notifications.Type.INFO, "Vui lòng chọn trạng thái làm việc của nhân viên");
+////            return false;
+////        }
+//        return true;
+//    }
+    
     public static void createExcel(ArrayList<KhachHang> list, String filePath) {
         Workbook workbook = new XSSFWorkbook();
         Sheet sheet = workbook.createSheet("Customer Data");
@@ -587,7 +626,8 @@ public class KhachHang_GUI extends javax.swing.JPanel {
         try {
             // TODO add your handling code here:
             if (row != -1) {
-                kh_BUS.updateKH(getValueForm(), TOOL_TIP_TEXT_KEY);
+            	String ma = txt_maKH.getText();
+                kh_BUS.updateKH(getValueForm(), ma);
                 renderCustomerTable(kh_BUS.getAllKH());
 
             } else {
@@ -607,7 +647,7 @@ public class KhachHang_GUI extends javax.swing.JPanel {
             // TODO add your handling code here:
             boolean isCompleted = kh_BUS.createKH(txt_tenKH.getText(), date_dateOfBirth.getDate(), txt_sdt.getText(),
                     txt_dc.getText(), rad_men.isSelected(), txt_cccd.getText());
-            System.out.println("test" + txt_sdt.getText());
+//            System.out.println("test" + txt_sdt.getText());
             if (!isCompleted) {
                 Notifications.getInstance().show(Notifications.Type.ERROR, "Khách hàng đã tồn tại");
                 return;

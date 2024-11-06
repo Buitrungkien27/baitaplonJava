@@ -143,7 +143,7 @@ public class KhachHang_DAO implements interfaces.DAOBase<KhachHang> {
 
     @Override
     public Boolean create(KhachHang object) {
-    	System.out.println("Test 2:" + object.getSdt());
+//    	System.out.println("Test 2:" + object.getSdt());
         try {
             String phoneCheck = "select * from KhachHang where sdt = ?";
             PreparedStatement phoneStatement = ConnectDB.conn.prepareStatement(phoneCheck);

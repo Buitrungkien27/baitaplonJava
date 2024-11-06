@@ -39,7 +39,7 @@ public class Menu extends JPanel {
     private static final int employeeItemsBan[][] = {
         {3, 0},
         {4, 0},
-        {7, 0},
+        {7, 0}, {7, 1}
     };
 
     public boolean isMenuFull() {
@@ -74,7 +74,7 @@ public class Menu extends JPanel {
         String roleName = Application.nhanVien.getChucVu();
 
 //        Nếu quản  lí thì cho phép tất cả
-        if (roleName.equalsIgnoreCase("Quản Lí")) {
+        if (roleName.equalsIgnoreCase("Quản Lý")) {
             return false;
         }
 
