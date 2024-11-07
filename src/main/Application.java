@@ -28,7 +28,6 @@ import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 import javax.swing.UIManager;
 import raven.toast.Notifications;
-//kien
 public class Application extends javax.swing.JFrame {
 
     public static Application app;
@@ -179,6 +178,7 @@ public class Application extends javax.swing.JFrame {
         }
 
 //        Delay render
+        app = new Application();
         Timer timer = new Timer(2500, (ActionEvent evt) -> {
             java.awt.EventQueue.invokeLater(() -> {
                 app.setVisible(true);
@@ -186,6 +186,6 @@ public class Application extends javax.swing.JFrame {
         });
         timer.setRepeats(false);
         timer.start();
-        app = new Application();
+        
     }
 }

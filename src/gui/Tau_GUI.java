@@ -1,6 +1,10 @@
 package gui;
 
 import com.toedter.calendar.JDateChooser;
+
+import entity.NhanVien;
+import entity.Tau;
+
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
@@ -17,6 +21,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.util.ArrayList;
 import java.util.Calendar;
 
 public final class Tau_GUI extends JPanel {
@@ -35,8 +40,9 @@ public final class Tau_GUI extends JPanel {
 
     public Tau_GUI() {
         initComponents();
-        init();
         loadDataToTable(); // Tải dữ liệu từ cơ sở dữ liệu khi khởi động
+        init();
+       
     }
 
     private void loadDataToTable() {
@@ -100,6 +106,7 @@ public final class Tau_GUI extends JPanel {
 
         comboTrangThai.setSelectedIndex(0);
     }
+   
 
     public void initComponents() {
         setLayout(new BorderLayout());
