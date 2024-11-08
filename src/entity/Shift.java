@@ -8,10 +8,6 @@ import java.util.Date;
 import java.util.Objects;
 import java.util.regex.Pattern;
 
-/**
- *
- * @author KienTran
- */
 public final class Shift {
 
     private final String ID_EMPTY = "ID không được rỗng !";

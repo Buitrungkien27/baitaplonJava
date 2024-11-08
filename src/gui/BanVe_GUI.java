@@ -45,6 +45,7 @@ public class BanVe_GUI extends JPanel {
         String[] columnNames = {"Ga đi", "Ga đến", "Họ và tên", "Số điện thoại", "Mã vé tàu", "Ngày tạo", "Tiền khách đưa", "Tiền thừa", "Loại Toa", "Vị trí ghế", "Giá vé", "Mã Tàu"};
         model = new DefaultTableModel(columnNames, 0);
         table = new JTable(model);
+   
         pnlDanhSachVe.add(new JScrollPane(table), BorderLayout.CENTER);
      // Đặt kích thước cho bảng để bảng dữ liệu dài hơn và hiển thị nhiều thông tin hơn
         table.setPreferredScrollableViewportSize(new Dimension(900, 300)); // Tăng chiều cao của bảng lên 350
@@ -80,6 +81,7 @@ public class BanVe_GUI extends JPanel {
         txtMaHD.setEditable(false);
         txtTienThua.setEditable(false);
         txtGiaVe.setEditable(false);
+        
         // Add this ActionListener for txtMaTau here to fetch data from the database when a train ID is entered
         txtMaTau.addActionListener(new ActionListener() {
             @Override
@@ -147,17 +149,14 @@ public class BanVe_GUI extends JPanel {
             gbc.gridx = (i % 2) * 2 + 1; // Cột ô nhập
             pnlNhapThongTin.add(fields[i], gbc);
         }
-
         pnlDuoi.add(pnlNhapThongTin); // Thêm phần nhập thông tin vào bên trái của pnlDuoi
-
-
-        pnlDuoi.add(pnlNhapThongTin); // Thêm phần nhập thông tin vào bên trái của pnlDuoi
-        JButton btnThanhToan = new JButton("Thanh Toán");
+        JButton btnThanhToan = new JButton("Thanh Toán");        
         gbc.gridx = 0;
         gbc.gridy = (labels.length / 2) + 1; // Đặt nó ở hàng cuối cùng
         gbc.gridwidth = 2; // Trải rộng qua hai cột
         gbc.anchor = GridBagConstraints.CENTER; 
         pnlNhapThongTin.add(btnThanhToan, gbc);
+        
         // Bên phải - Phần chọn ghế
         JPanel pnlChonGhe = new JPanel(new GridLayout(5, 5, 5, 5));
         buttonsGhe = new JButton[25];
@@ -292,7 +291,7 @@ public class BanVe_GUI extends JPanel {
                     txtTienKhachDua.setText("");
                     txtTienThua.setText("");
                     txtViTriGhe.setText("");
-                    txtGiaVe.setText(""); // Xóa giá vé sau khi thanh toán
+                    
                     dateNgayTao.setDate(null);
 
                 } catch (NumberFormatException ex) {
@@ -325,7 +324,7 @@ public class BanVe_GUI extends JPanel {
 
     private void loadTicketData() {
     	 try (Connection conn = DriverManager.getConnection(DB_URL, USER, PASSWORD)) {
-    	        String sql = "SELECT gaDi, gaDen, hoTenKH, soDienThoai, maVT, ngayTao, tienKhachDua, tienThua, loaiToa, viTriGhe, giaVe FROM VeTau";
+    	        String sql = "SELECT gaDi, gaDen, hoTenKH, soDienThoai, maVT, ngayTao, tienKhachDua, tienThua, loaiToa, viTriGhe, giaVe ,maTau FROM VeTau";
     	        try (PreparedStatement pstmt = conn.prepareStatement(sql);
     	             ResultSet rs = pstmt.executeQuery()) {
     	            
@@ -345,13 +344,14 @@ public class BanVe_GUI extends JPanel {
     	                String loaiToa = rs.getString("loaiToa");
     	                String viTriGhe = rs.getString("viTriGhe");
     	                int giaVe = rs.getInt("giaVe");
+    	                String maTau = rs.getString("maTau");
 
     	                // Định dạng ngày tạo trước khi thêm vào bảng
     	                SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
     	                String strNgayTao = (ngayTao != null) ? sdf.format(ngayTao) : "";
 
     	                // Thêm dữ liệu vào model của JTable
-    	                model.addRow(new Object[]{gaDi, gaDen, hoTen, sdt, maHD, strNgayTao, tienKhachDua, tienThua, loaiToa, viTriGhe, giaVe});
+    	                model.addRow(new Object[]{gaDi, gaDen, hoTen, sdt, maHD, strNgayTao, tienKhachDua, tienThua, loaiToa, viTriGhe, giaVe, maTau});
     	            }
     	        }
     	    } catch (SQLException ex) {
@@ -578,6 +578,7 @@ public class BanVe_GUI extends JPanel {
         // TODO: Tạo mã khách hàng tự động từ họ tên
         return hoTen.substring(0, Math.min(3, hoTen.length())).toUpperCase() + String.valueOf(System.currentTimeMillis()).substring(10);
     }
+    
 
     // Phần main vẫn giữ nguyên
     public static void main(String[] args) {
