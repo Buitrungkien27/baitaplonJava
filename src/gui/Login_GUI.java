@@ -168,7 +168,7 @@ public class Login_GUI extends javax.swing.JPanel {
         pwr_password.putClientProperty(FlatClientProperties.STYLE, ""
             + "showRevealButton:true;"
             + "showCapsLock:true");
-        pwr_password.setText("Phat2004");
+        pwr_password.setText("123456Aa");
         jPanel7.add(pwr_password, java.awt.BorderLayout.CENTER);
 
         pnl_loginForm.add(jPanel7);

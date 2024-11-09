@@ -19,7 +19,7 @@ public final class Tau_GUI extends JPanel {
     private static final String DB_URL = "jdbc:sqlserver://localhost:1433;databaseName=QLBanVe";
     private static final String USER = "sa";
     private static final String PASSWORD = "sa123";
-    private SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy"); // Định dạng ngày
+    private SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy"); 
 
     public Tau_GUI() {
         initComponents();
@@ -94,8 +94,8 @@ public final class Tau_GUI extends JPanel {
             "Mã tàu", "Tên tàu", "Loại Toa", "Ga đi", "Ga đến", "Thời gian đi", "Thời gian đến", "Số ghế"}, 0);
 
         tbl_DsTau = new JTable(modelTau);
-        tbl_DsTau.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS); // Điều chỉnh tự động kích thước cột
-        tbl_DsTau.setFillsViewportHeight(true); // Tự động lấp đầy viewport của JScrollPane
+        tbl_DsTau.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS); 
+        tbl_DsTau.setFillsViewportHeight(true); 
 
         JScrollPane scrollPane = new JScrollPane(tbl_DsTau);
         add(scrollPane, BorderLayout.CENTER);
@@ -141,7 +141,18 @@ public final class Tau_GUI extends JPanel {
         panelGa.add(comboGaDi);
 
         panelGa.add(new JLabel("Ga đến:"));
-        comboGaDen = new JComboBox<>(new String[]{"An Giang", "Bà Rịa - Vũng Tàu", "Bạc Liêu", "Bắc Giang", "Bắc Kạn", "Bắc Ninh"});
+        comboGaDen = new JComboBox<>(new String[]{"An Giang", "Bà Rịa - Vũng Tàu", "Bạc Liêu", "Bắc Giang", "Bắc Kạn", "Bắc Ninh",
+        		"Bến Tre", "Bình Dương", "Bình Định", "Bình Phước", "Bình Thuận", "Cà Mau",
+        		"Cần Thơ", "Cao Bằng", "Đà Nẵng", "Đắk Lắk", "Đắk Nông", "Điện Biên",
+        		"Đồng Nai", "Đồng Tháp", "Gia Lai", "Hà Giang", "Hà Nam", "Hà Nội",
+        		"Hà Tĩnh", "Hải Dương", "Hải Phòng", "Hậu Giang", "Hòa Bình", "Hưng Yên",
+        		"Khánh Hòa", "Kiên Giang", "Kon Tum", "Lai Châu", "Lâm Đồng", "Lạng Sơn",
+        		"Lào Cai", "Long An", "Nam Định", "Nghệ An", "Ninh Bình", "Ninh Thuận",
+        		"Phú Thọ", "Phú Yên", "Quảng Bình", "Quảng Nam", "Quảng Ngãi", "Quảng Ninh",
+        		"Quảng Trị", "Sóc Trăng", "Sơn La", "Tây Ninh", "Thái Bình", "Thái Nguyên",
+        		"Thanh Hóa", "Thừa Thiên Huế", "Tiền Giang", "Sài Gòn", "Trà Vinh",
+        		"Tuyên Quang", "Vĩnh Long", "Vĩnh Phúc", "Yên Bái"
+});
         panelGa.add(comboGaDen);
 
         JPanel panelThoiGian = new JPanel(new GridLayout(2, 2, 10, 10));
@@ -149,12 +160,12 @@ public final class Tau_GUI extends JPanel {
 
         panelThoiGian.add(new JLabel("Thời gian đi:"));
         dateChooserDi = new JDateChooser();
-        dateChooserDi.setDateFormatString("dd/MM/yyyy"); // Định dạng ngày
+        dateChooserDi.setDateFormatString("dd/MM/yyyy");
         panelThoiGian.add(dateChooserDi);
 
         panelThoiGian.add(new JLabel("Thời gian đến:"));
         dateChooserDen = new JDateChooser();
-        dateChooserDen.setDateFormatString("dd/MM/yyyy"); // Định dạng ngày
+        dateChooserDen.setDateFormatString("dd/MM/yyyy"); 
         panelThoiGian.add(dateChooserDen);
 
         gbc.gridx = 0;
@@ -179,6 +190,53 @@ public final class Tau_GUI extends JPanel {
         btnThem.addActionListener(e -> addTrain());
         btnXoa.addActionListener(e -> deleteSelectedRow());
         btnXoaTrang.addActionListener(e -> clearInputFields());
+        btnCapNhat.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                int selectedRow = tbl_DsTau.getSelectedRow();
+                if (selectedRow == -1) {
+                    JOptionPane.showMessageDialog(null, "Vui lòng chọn dòng cần cập nhật!");
+                    return;
+                }
+
+                // Lấy mã tàu từ dòng được chọn
+                String maTau = modelTau.getValueAt(selectedRow, 0).toString();
+
+                try (Connection conn = DriverManager.getConnection(DB_URL, USER, PASSWORD)) {
+                    String sql = "UPDATE Tau SET tenTau = ?, loaiToa = ?, gaDi = ?, gaDen = ?, thoiGianDi = ?, thoiGianDen = ?, soGhe = ? WHERE maTau = ?";
+                    try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                        pstmt.setString(1, txtTenTau.getText());
+                        pstmt.setString(2, comboLoaiToa.getSelectedItem().toString());
+                        pstmt.setString(3, comboGaDi.getSelectedItem().toString());
+                        pstmt.setString(4, comboGaDen.getSelectedItem().toString());
+                        pstmt.setTimestamp(5, new java.sql.Timestamp(dateChooserDi.getDate().getTime()));
+                        pstmt.setTimestamp(6, new java.sql.Timestamp(dateChooserDen.getDate().getTime()));
+                        pstmt.setInt(7, Integer.parseInt(txtSoGhe.getText()));
+                        pstmt.setString(8, maTau);
+
+                        int affectedRows = pstmt.executeUpdate();
+                        if (affectedRows > 0) {
+                            JOptionPane.showMessageDialog(null, "Dữ liệu đã được cập nhật thành công!");
+
+                            // Cập nhật dữ liệu trong bảng hiển thị
+                            modelTau.setValueAt(txtTenTau.getText(), selectedRow, 1);
+                            modelTau.setValueAt(comboLoaiToa.getSelectedItem().toString(), selectedRow, 2);
+                            modelTau.setValueAt(comboGaDi.getSelectedItem().toString(), selectedRow, 3);
+                            modelTau.setValueAt(comboGaDen.getSelectedItem().toString(), selectedRow, 4);
+                            modelTau.setValueAt(dateFormat.format(dateChooserDi.getDate()), selectedRow, 5);
+                            modelTau.setValueAt(dateFormat.format(dateChooserDen.getDate()), selectedRow, 6);
+                            modelTau.setValueAt(txtSoGhe.getText(), selectedRow, 7);
+                        } else {
+                            JOptionPane.showMessageDialog(null, "Không có dòng nào được cập nhật. Kiểm tra lại mã tàu hoặc dữ liệu cần cập nhật.");
+                        }
+                    }
+                } catch (Exception ex) {
+                    ex.printStackTrace(); // Hiển thị chi tiết lỗi trong console
+                    JOptionPane.showMessageDialog(null, "Lỗi khi cập nhật dữ liệu: " + ex.getMessage());
+                }
+            }
+        });
+
 
         panelSouth.add(btnThem);
         panelSouth.add(btnXoa);
@@ -257,56 +315,6 @@ public final class Tau_GUI extends JPanel {
                 JOptionPane.showMessageDialog(null, "Lỗi khi xóa dữ liệu: " + ex.getMessage());
             }
         }
-    
-
-    
-
-    
-    btnCapNhat.addActionListener(new ActionListener() {
-        @Override
-        public void actionPerformed(ActionEvent e) {
-            int selectedRow = tbl_DsTau.getSelectedRow();
-            if (selectedRow == -1) {
-                JOptionPane.showMessageDialog(null, "Vui lòng chọn dòng cần cập nhật!");
-                return;
-            }
-
-            // Lấy mã tàu từ dòng được chọn
-            String maTau = modelTau.getValueAt(selectedRow, 0).toString();
-
-            try (Connection conn = DriverManager.getConnection(DB_URL, USER, PASSWORD)) {
-                String sql = "UPDATE Tau SET tenTau = ?, loaiToa = ?, gaDi = ?, gaDen = ?, thoiGianDi = ?, thoiGianDen = ?, soGhe = ? WHERE maTau = ?";
-                try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-                    pstmt.setString(1, txtTenTau.getText());
-                    pstmt.setString(2, comboLoaiToa.getSelectedItem().toString());
-                    pstmt.setString(3, comboGaDi.getSelectedItem().toString());
-                    pstmt.setString(4, comboGaDen.getSelectedItem().toString());
-                    pstmt.setTimestamp(5, new java.sql.Timestamp(dateChooserDi.getDate().getTime()));
-                    pstmt.setTimestamp(6, new java.sql.Timestamp(dateChooserDen.getDate().getTime()));
-                    pstmt.setInt(7, Integer.parseInt(txtSoGhe.getText()));
-                    pstmt.setString(8, maTau);
-
-                    int affectedRows = pstmt.executeUpdate();
-                    if (affectedRows > 0) {
-                        JOptionPane.showMessageDialog(null, "Dữ liệu đã được cập nhật thành công!");
-
-                        // Cập nhật dữ liệu trong bảng hiển thị
-                        modelTau.setValueAt(txtTenTau.getText(), selectedRow, 1);
-                        modelTau.setValueAt(comboLoaiToa.getSelectedItem().toString(), selectedRow, 2);
-                        modelTau.setValueAt(comboGaDi.getSelectedItem().toString(), selectedRow, 3);
-                        modelTau.setValueAt(comboGaDen.getSelectedItem().toString(), selectedRow, 4);
-                        modelTau.setValueAt(dateFormat.format(dateChooserDi.getDate()), selectedRow, 5);
-                        modelTau.setValueAt(dateFormat.format(dateChooserDen.getDate()), selectedRow, 6);
-                        modelTau.setValueAt(txtSoGhe.getText(), selectedRow, 7);
-                    } else {
-                        JOptionPane.showMessageDialog(null, "Không thể cập nhật dữ liệu!");
-                    }
-                }
-            } catch (Exception ex) {
-                JOptionPane.showMessageDialog(null, "Lỗi khi cập nhật dữ liệu: " + ex.getMessage());
-            }
-        }
-    });
 }
     public static void main(String[] args) {
         JFrame frame = new JFrame("Hệ thống quản lý tàu");

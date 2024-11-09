@@ -33,9 +33,6 @@ import org.apache.poi.ss.usermodel.Font;
 import raven.toast.Notifications;
 import utilities.SVGIcon;
 public final class HoaDon_GUI extends javax.swing.JPanel {
-
-//    private OrderManagement_BUS bus;
-
     private DefaultTableModel tblModel_order;
     private DefaultTableModel tblModel_orderDetail;
 
@@ -50,7 +47,7 @@ public final class HoaDon_GUI extends javax.swing.JPanel {
     public void init() {
         tblModel_order = new DefaultTableModel(new String[]{"Mã hoá đơn", "Nhân viên", "Khách hàng", "Ngày mua", "Thành tiền"}, 0);
         tbl_order.setModel(tblModel_order);
-        tblModel_orderDetail = new DefaultTableModel(new String[]{"Mã vé", "Mã chuyến tàu", "Số lượng", "Đơn giá", "Tổng tiền"}, 0);
+        tblModel_orderDetail = new DefaultTableModel(new String[]{"Mã vé", "Mã Vé tàu", "Số lượng", "Đơn giá", "Tổng tiền"}, 0);
         tbl_orderDetail.setModel(tblModel_orderDetail);
         tbl_orderDetail.getSelectionModel().addListSelectionListener((ListSelectionEvent event) -> {
             int rowIndex = tbl_orderDetail.getSelectedRow();
