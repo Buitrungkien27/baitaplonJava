@@ -14,6 +14,7 @@ import com.formdev.flatlaf.FlatClientProperties;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.sql.Connection;
 import java.util.Date;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
@@ -47,7 +48,7 @@ public final class HoaDon_GUI extends javax.swing.JPanel {
     public void init() {
         tblModel_order = new DefaultTableModel(new String[]{"Mã hoá đơn", "Nhân viên", "Khách hàng", "Ngày mua", "Thành tiền"}, 0);
         tbl_order.setModel(tblModel_order);
-        tblModel_orderDetail = new DefaultTableModel(new String[]{"Mã vé", "Mã Vé tàu", "Số lượng", "Đơn giá", "Tổng tiền"}, 0);
+        tblModel_orderDetail = new DefaultTableModel(new String[]{"Mã vé", "Mã tàu", "Số lượng", "Đơn giá", "Tổng tiền"}, 0);
         tbl_orderDetail.setModel(tblModel_orderDetail);
         tbl_orderDetail.getSelectionModel().addListSelectionListener((ListSelectionEvent event) -> {
             int rowIndex = tbl_orderDetail.getSelectedRow();
@@ -573,6 +574,7 @@ public final class HoaDon_GUI extends javax.swing.JPanel {
 //        viewPDFFile();
     }                                           
 
+   
 
     // Variables declaration - do not modify                     
     private javax.swing.JButton btn_next;

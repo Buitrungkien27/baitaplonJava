@@ -45,6 +45,7 @@ public class NhanVien_GUI extends javax.swing.JPanel {
     public NhanVien_GUI() {
         initComponents();
         init();
+        
     }
     
     private void init() {
@@ -87,7 +88,7 @@ public class NhanVien_GUI extends javax.swing.JPanel {
         else
             rdb_daNghi.setSelected(true);
         if(nhanVien.getChucVu().equals("Nhân Viên Bán Vé"))
-            cmbModel_thongTin.setSelectedItem("Nhân Viên Bán Hàng");
+            cmbModel_thongTin.setSelectedItem("Nhân Viên Bán Vé");
         else
         	cmbModel_thongTin.setSelectedItem("Quản Lý");
         chonNgaySinh.setDate(nhanVien.getNgaySinh());

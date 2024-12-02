@@ -34,10 +34,10 @@ public class NhanVien_BUS {
         if (maxID == null) {
             prefix += "000";
         } else {
-            String lastFourChars = maxID.substring(maxID.length() - 4);
+            String lastFourChars = maxID.substring(maxID.length() - 3);
             int num = Integer.parseInt(lastFourChars);
             num++;
-            prefix += String.format("%04d", num);
+            prefix += String.format("%03d", num);
         }
         return prefix;
     }
@@ -58,10 +58,6 @@ public class NhanVien_BUS {
     public boolean addNewNV(NhanVien nv) {
         return dao.create(nv);
     }
-
-//    public String getPassword(NhanVien nv) throws Exception {
-//        return dao.getPassword(nv);
-//    }
 
     public boolean createNewAccount(NhanVien nv) throws Exception {
         return dao.createAccount(nv);
