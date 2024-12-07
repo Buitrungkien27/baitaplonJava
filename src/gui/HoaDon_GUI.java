@@ -11,10 +11,17 @@ import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 //import utilities.FormatNumber;
 import com.formdev.flatlaf.FlatClientProperties;
+
+import connectDB.ConnectDB;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.Date;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
@@ -28,27 +35,57 @@ import org.apache.poi.ss.usermodel.VerticalAlignment;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-//import utilities.OrderPrinter;
-//import utilities.SVGIcon;
 import org.apache.poi.ss.usermodel.Font;
 import raven.toast.Notifications;
 import utilities.SVGIcon;
 public final class HoaDon_GUI extends javax.swing.JPanel {
-    private DefaultTableModel tblModel_order;
+    private static final String PASSWORD = null;
+	private static final String USER = null;
+	private static final String DB_URL = null;
+	private DefaultTableModel tblModel_order;
     private DefaultTableModel tblModel_orderDetail;
-
     private int currentPage;
     private int lastPage;
     public HoaDon_GUI() {
         initComponents();
         init();
         alterTable();
-
+        loadDanhSachHoaDon(); // Tải dữ liệu từ bảng VeTau
     }
-    public void init() {
-        tblModel_order = new DefaultTableModel(new String[]{"Mã hoá đơn", "Nhân viên", "Khách hàng", "Ngày mua", "Thành tiền"}, 0);
+
+    private void loadDanhSachHoaDon() {
+        try (Connection conn = DriverManager.getConnection(DB_URL, USER, PASSWORD)) {
+            // Truy vấn SQL để lấy dữ liệu từ bảng VeTau
+            String sql = "SELECT maVe, maNhanVien, maKhachHang, ngayDat, soDienThoai FROM VeTau";
+            try (PreparedStatement pstmt = conn.prepareStatement(sql);
+                 ResultSet rs = pstmt.executeQuery()) {
+
+                DefaultTableModel model = null;
+				// Xóa toàn bộ dữ liệu cũ trên bảng trước khi thêm dữ liệu mới
+                model.setRowCount(0);
+
+                // Duyệt qua từng dòng dữ liệu từ kết quả truy vấn
+                while (rs.next()) {
+                    String maVe = rs.getString("maVe"); // Lấy cột maVe
+                    String maNhanVien = rs.getString("maNhanVien"); // Lấy cột maNhanVien
+                    String maKhachHang = rs.getString("maKhachHang"); // Lấy cột maKhachHang
+                    Date ngayDat = rs.getDate("ngayDat"); // Lấy cột ngayDat
+                    String soDienThoai = rs.getString("soDienThoai"); // Lấy cột soDienThoai
+
+                    // Thêm dữ liệu vào model của JTable
+                    model.addRow(new Object[]{maVe, maNhanVien, maKhachHang, ngayDat, soDienThoai});
+                }
+            }
+        } catch (SQLException ex) {
+            // Hiển thị thông báo lỗi khi xảy ra lỗi truy vấn hoặc kết nối
+            JOptionPane.showMessageDialog(null, "Lỗi khi tải dữ liệu từ cơ sở dữ liệu: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+	public void init() {
+        tblModel_order = new DefaultTableModel(new String[]{"Mã hoá đơn", "Mã Nhân viên", "Mã Khách hàng", "Ngày Tạo", "Số Điện Thoại"}, 0);
         tbl_order.setModel(tblModel_order);
-        tblModel_orderDetail = new DefaultTableModel(new String[]{"Mã vé", "Mã tàu", "Số lượng", "Đơn giá", "Tổng tiền"}, 0);
+        tblModel_orderDetail = new DefaultTableModel(new String[]{"Mã vé", "Mã tàu", "Số lượng", "Giá Vé", "Loại Toa" , "Mã Hóa Đơn"}, 0);
         tbl_orderDetail.setModel(tblModel_orderDetail);
         tbl_orderDetail.getSelectionModel().addListSelectionListener((ListSelectionEvent event) -> {
             int rowIndex = tbl_orderDetail.getSelectedRow();

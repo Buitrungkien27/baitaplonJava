@@ -5,7 +5,7 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import javax.swing.JOptionPane;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -18,6 +18,7 @@ import java.text.SimpleDateFormat;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 
 public class BanVe_GUI extends JPanel {
@@ -25,7 +26,7 @@ public class BanVe_GUI extends JPanel {
     private static final String USER = "sa";
     private static final String PASSWORD = "sa123";
 
-    private JTextField txtHoTen, txtSDT, txtMaHD, txtTienKhachDua, txtTienThua, txtViTriGhe, txtGiaVe, txtgaDi, txtgaDen, txtMaTau;
+    private JTextField txtHoTen, txtSDT, txtMaHD, txtTienKhachDua, txtTienThua, txtViTriGhe, txtGiaVe, txtgaDi, txtgaDen, txtMaTau , txtMaHoaDon;
     private JComboBox<String> comboLoaiToa;
     private JDateChooser dateNgayTao;
     private JTable table;
@@ -42,7 +43,7 @@ public class BanVe_GUI extends JPanel {
         
          // Phần trên - hiển thị bảng danh sách vé
         JPanel pnlDanhSachVe = new JPanel(new BorderLayout());
-        String[] columnNames = {"Ga đi", "Ga đến", "Họ và tên", "Số điện thoại", "Mã vé tàu", "Ngày tạo", "Tiền khách đưa", "Tiền thừa", "Loại Toa", "Vị trí ghế", "Giá vé", "Mã Tàu"};
+        String[] columnNames = {"Ga đi", "Ga đến", "Họ và tên", "Số điện thoại", "Mã vé tàu", "Ngày tạo", "Tiền khách đưa", "Tiền thừa", "Loại Toa", "Vị trí ghế", "Giá vé", "Mã Tàu", "Mã Hóa Đơn"};
         model = new DefaultTableModel(columnNames, 0);
         table = new JTable(model);
    
@@ -65,15 +66,15 @@ public class BanVe_GUI extends JPanel {
         gbc.fill = GridBagConstraints.HORIZONTAL;
 
         // Thiết lập các nhãn và ô nhập liệu để chia thành 2 cột
-        String[] labels = {"Ga đi:", "Ga đến:", "Họ và tên:", "Số điện thoại:", "Mã vé tàu:", "Ngày tạo:", "Tiền khách đưa:", "Tiền thừa:", "Loại Toa:", "Giá vé:" , "Mã Tàu:"};
-        JComponent[] fields = {
+        String[] labels = {"Ga đi:", "Ga đến:", "Họ và tên:", "Số điện thoại:", "Mã vé tàu:", "Ngày tạo:", "Tiền khách đưa:", "Tiền thừa:", "Loại Toa:", "Giá vé:" , "Mã Tàu:" ,"Mã Hóa Đơn:"};     
+		JComponent[] fields = {
             txtgaDi = new JTextField(), txtgaDen = new JTextField(),
             txtHoTen = new JTextField(), txtSDT = new JTextField(),
             txtMaHD = new JTextField(), dateNgayTao = new JDateChooser(),
             txtTienKhachDua = new JTextField(), txtTienThua = new JTextField(),
             comboLoaiToa = new JComboBox<>(new String[]{"Toa 1", "Toa 2", "Toa 3", "Toa 4", "Toa 5"}),
-            txtGiaVe = new JTextField(), txtMaTau = new JTextField()
-            
+            txtGiaVe = new JTextField(), txtMaTau = new JTextField(),
+            		txtMaHoaDon = new JTextField() 
         };
         txtgaDi.setEditable(false);
         txtgaDen.setEditable(false);
@@ -81,6 +82,7 @@ public class BanVe_GUI extends JPanel {
         txtMaHD.setEditable(false);
         txtTienThua.setEditable(false);
         txtGiaVe.setEditable(false);
+        txtMaHoaDon.setEditable(false);
         
         // Add this ActionListener for txtMaTau here to fetch data from the database when a train ID is entered
         txtMaTau.addActionListener(new ActionListener() {
@@ -223,7 +225,8 @@ public class BanVe_GUI extends JPanel {
                 try {
                     String hoTen = txtHoTen.getText();
                     String sdt = txtSDT.getText();
-
+                   
+                    
                     // Kiểm tra họ và tên và số điện thoại
                     if (!hoTen.matches("[a-zA-ZÀ-Ỹà-ỹ\\s]+")) {
                         JOptionPane.showMessageDialog(null, "Họ và tên chỉ được chứa chữ cái, không được chứa số.", "Lỗi", JOptionPane.ERROR_MESSAGE);
@@ -253,7 +256,9 @@ public class BanVe_GUI extends JPanel {
                     String maTau = txtMaTau.getText().trim(); // Lấy mã tàu từ ô nhập
 
                     String loaiToa = (String) comboLoaiToa.getSelectedItem();
-
+                    // Tạo mã hóa đơn tự động
+                    String maHoaDon = generateMaHoaDon();
+                    txtMaHoaDon.setText(maHoaDon);
                     // Xử lý tất cả các ghế đã chọn trong lần đặt hiện tại
                     for (String viTriGhe : gheTamDat) {
                         JButton ghe = findButtonByViTri(viTriGhe);
@@ -267,7 +272,7 @@ public class BanVe_GUI extends JPanel {
                             int giaGhe = getGiaGhe(loaiToa, ghe) + getGiaCoBan(gaDen);
 
                             // Thêm dữ liệu của từng vé vào bảng
-                            model.addRow(new Object[]{gaDi, gaDen, hoTen, sdt, maHD, strNgayTao, tienKhachDua, tienThua, loaiToa, viTriGhe, giaGhe, maTau});
+                            model.addRow(new Object[]{gaDi, gaDen, hoTen, sdt, maHD, strNgayTao, tienKhachDua, tienThua, loaiToa, viTriGhe, giaGhe, maTau, maHoaDon});
 
                             // Lưu ghế đã đặt vào danh sách chính thức
                             if (!gheDaDatTheoToa.containsKey(loaiToa)) {
@@ -276,8 +281,10 @@ public class BanVe_GUI extends JPanel {
                             gheDaDatTheoToa.get(loaiToa).add(viTriGhe);
 
                             // Lưu dữ liệu vào cơ sở dữ liệu
-                            saveToDatabase(gaDi, gaDen, hoTen, sdt, maHD, ngayTao, tienKhachDua, tienThua, loaiToa, viTriGhe, giaGhe , maTau);
-
+                            saveToDatabase(gaDi, gaDen, hoTen, sdt, maHD, ngayTao, tienKhachDua, tienThua, loaiToa, viTriGhe, giaGhe , maTau , maHoaDon);
+                            
+                           
+                            
                             // Khóa ghế đã đặt sau khi thanh toán
                             ghe.setEnabled(false);
                         }
@@ -291,13 +298,31 @@ public class BanVe_GUI extends JPanel {
                     txtTienKhachDua.setText("");
                     txtTienThua.setText("");
                     txtViTriGhe.setText("");
-                    
+                    txtMaHoaDon.setText("");
+                    txtgaDi.setText("");
+                    txtgaDen.setText("");
+                    txtGiaVe.setText("");
+                    txtMaTau.setText("");                  
+                    comboLoaiToa.setSelectedIndex(0);
                     dateNgayTao.setDate(null);
 
                 } catch (NumberFormatException ex) {
                     JOptionPane.showMessageDialog(null, "Vui lòng nhập đúng định dạng cho tiền khách đưa.", "Lỗi", JOptionPane.ERROR_MESSAGE);
                 }
             }
+
+            // Hàm tạo mã hóa đơn tự động
+            private String generateMaHoaDon() {
+                Date now = new Date();
+                SimpleDateFormat sdf = new SimpleDateFormat("ddMMyyyy");
+                String dateStr = sdf.format(now);
+
+                Random rand = new Random();
+                int randomNum = rand.nextInt(90000) + 10000; // 5 chữ số từ 10000 đến 99999
+
+                return "HD" + dateStr + randomNum;
+            }
+
         });
 
         // Sự kiện khi panel bị ẩn hoặc người dùng rời đi mà không thanh toán
@@ -321,10 +346,11 @@ public class BanVe_GUI extends JPanel {
         // Gọi hàm để thiết lập màu ghế ban đầu
         updateGheColors();
     }
+    
 
     private void loadTicketData() {
     	 try (Connection conn = DriverManager.getConnection(DB_URL, USER, PASSWORD)) {
-    	        String sql = "SELECT gaDi, gaDen, hoTenKH, soDienThoai, maVT, ngayTao, tienKhachDua, tienThua, loaiToa, viTriGhe, giaVe ,maTau FROM VeTau";
+    	        String sql = "SELECT gaDi, gaDen, hoTenKH, soDienThoai, maVT, ngayTao, tienKhachDua, tienThua, loaiToa, viTriGhe, giaVe ,maTau, maHoaDon FROM VeTau";
     	        try (PreparedStatement pstmt = conn.prepareStatement(sql);
     	             ResultSet rs = pstmt.executeQuery()) {
     	            
@@ -345,13 +371,13 @@ public class BanVe_GUI extends JPanel {
     	                String viTriGhe = rs.getString("viTriGhe");
     	                int giaVe = rs.getInt("giaVe");
     	                String maTau = rs.getString("maTau");
-
+    	                String maHoaDon = rs.getString("maHoaDon");
     	                // Định dạng ngày tạo trước khi thêm vào bảng
     	                SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
     	                String strNgayTao = (ngayTao != null) ? sdf.format(ngayTao) : "";
 
     	                // Thêm dữ liệu vào model của JTable
-    	                model.addRow(new Object[]{gaDi, gaDen, hoTen, sdt, maHD, strNgayTao, tienKhachDua, tienThua, loaiToa, viTriGhe, giaVe, maTau});
+    	                model.addRow(new Object[]{gaDi, gaDen, hoTen, sdt, maHD, strNgayTao, tienKhachDua, tienThua, loaiToa, viTriGhe, giaVe, maTau,maHoaDon});
     	            }
     	        }
     	    } catch (SQLException ex) {
@@ -372,10 +398,12 @@ public class BanVe_GUI extends JPanel {
 
     // Phương thức xác định khu vực miền của ga đến và giá vé cơ bản
     private int getGiaCoBan(String gaDen) {
-        String[] mienBac = {"Bắc Giang", "Bắc Kạn", "Bắc Ninh", "Cao Bằng", "Điện Biên", "Hà Giang", "Hà Nam",
-                            "Hà Nội", "Hải Dương", "Hải Phòng", "Hòa Bình", "Hưng Yên", "Lạng Sơn", "Lào Cai",
-                            "Nam Định", "Ninh Bình", "Phú Thọ", "Quảng Ninh", "Sơn La", "Thái Bình", "Thái Nguyên",
-                            "Tuyên Quang", "Vĩnh Phúc", "Yên Bái"};
+        String[] mienBac = {
+        	    "Bắc Giang", "Bắc Kạn", "Bắc Ninh", "Cao Bằng", "Điện Biên", "Hà Giang", "Hà Nam",
+        	    "Hà Nội", "Hải Dương", "Hải Phòng", "Hòa Bình", "Hưng Yên", "Lạng Sơn", "Lào Cai",
+        	    "Nam Định", "Ninh Bình", "Phú Thọ", "Quảng Ninh", "Sơn La", "Thái Bình", "Thái Nguyên",
+        	    "Tuyên Quang", "Vĩnh Phúc", "Yên Bái", "Thanh Hóa"
+        	};
         String[] mienTrung = {"Đà Nẵng", "Bình Định", "Hà Tĩnh", "Khánh Hòa", "Nghệ An", "Phú Yên", "Quảng Bình",
                               "Quảng Nam", "Quảng Ngãi", "Quảng Trị", "Thừa Thiên Huế"};
         String[] mienNam = {"An Giang", "Bà Rịa - Vũng Tàu", "Bạc Liêu", "Bình Dương", "Bình Phước", "Bình Thuận",
@@ -549,10 +577,10 @@ public class BanVe_GUI extends JPanel {
     // Thêm phương thức `saveToDatabase` ngay trước phương thức main trong lớp BanVe_GUI
 
  // Phương thức lưu dữ liệu vào cơ sở dữ liệu
-    private void saveToDatabase(String gaDi, String gaDen, String hoTen, String sdt, String maHD, Date ngayTao, double tienKhachDua, double tienThua, String loaiToa, String viTriGhe, int giaVe, String maTau) {
+    private void saveToDatabase(String gaDi, String gaDen, String hoTen, String sdt, String maHD, Date ngayTao, double tienKhachDua, double tienThua, String loaiToa, String viTriGhe, int giaVe, String maTau, String maHoaDon) {
         try (Connection conn = DriverManager.getConnection(DB_URL, USER, PASSWORD)) {
-            String sql = "INSERT INTO VeTau (maVT, gaDi, gaDen, hoTenKH, soDienThoai, ngayTao, tienKhachDua, tienThua, loaiToa, viTriGhe, giaVe , maTau) " +
-                         "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            String sql = "INSERT INTO VeTau (maVT, gaDi, gaDen, hoTenKH, soDienThoai, ngayTao, tienKhachDua, tienThua, loaiToa, viTriGhe, giaVe , maTau, maHoaDon) " +
+                         "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
             try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
                 pstmt.setString(1, maHD);  // Mã vé tàu
                 pstmt.setString(2, gaDi);  // Ga đi
@@ -566,6 +594,7 @@ public class BanVe_GUI extends JPanel {
                 pstmt.setString(10, viTriGhe);     // Vị trí ghế
                 pstmt.setInt(11, giaVe);           // Giá vé
                 pstmt.setString(12, maTau);   // mã tàu
+				pstmt.setString(13, maHoaDon);
                 pstmt.executeUpdate();
             }
         } catch (SQLException ex) {
