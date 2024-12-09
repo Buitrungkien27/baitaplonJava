@@ -39,9 +39,9 @@ import org.apache.poi.ss.usermodel.Font;
 import raven.toast.Notifications;
 import utilities.SVGIcon;
 public final class HoaDon_GUI extends javax.swing.JPanel {
-    private static final String PASSWORD = null;
-	private static final String USER = null;
-	private static final String DB_URL = null;
+    private static final String PASSWORD = "sa123";
+	private static final String USER = "sa";
+	private static final String DB_URL = "jdbc:sqlserver://localhost:1433;databaseName=QLBanVe";;
 	private DefaultTableModel tblModel_order;
     private DefaultTableModel tblModel_orderDetail;
     private int currentPage;
@@ -55,37 +55,41 @@ public final class HoaDon_GUI extends javax.swing.JPanel {
 
     private void loadDanhSachHoaDon() {
         try (Connection conn = DriverManager.getConnection(DB_URL, USER, PASSWORD)) {
-            // Truy vấn SQL để lấy dữ liệu từ bảng VeTau
-            String sql = "SELECT maVe, maNhanVien, maKhachHang, ngayDat, soDienThoai FROM VeTau";
-            try (PreparedStatement pstmt = conn.prepareStatement(sql);
-                 ResultSet rs = pstmt.executeQuery()) {
+            // Truy vấn SQL để lấy dữ liệu từ bảng HoaDon
+            String sqlHoaDon = "SELECT maHD, maNV, maKH, trangThai, ngayLap, tongTien, tienKhachDua FROM HoaDon";
+            try (PreparedStatement pstmt = conn.prepareStatement(sqlHoaDon);
+                 ResultSet rsHoaDon = pstmt.executeQuery()) {
 
-                DefaultTableModel model = null;
-				// Xóa toàn bộ dữ liệu cũ trên bảng trước khi thêm dữ liệu mới
-                model.setRowCount(0);
+                // Xóa toàn bộ dữ liệu cũ trên bảng trước khi thêm dữ liệu mới
+                tblModel_order.setRowCount(0);
 
                 // Duyệt qua từng dòng dữ liệu từ kết quả truy vấn
-                while (rs.next()) {
-                    String maVe = rs.getString("maVe"); // Lấy cột maVe
-                    String maNhanVien = rs.getString("maNhanVien"); // Lấy cột maNhanVien
-                    String maKhachHang = rs.getString("maKhachHang"); // Lấy cột maKhachHang
-                    Date ngayDat = rs.getDate("ngayDat"); // Lấy cột ngayDat
-                    String soDienThoai = rs.getString("soDienThoai"); // Lấy cột soDienThoai
+                while (rsHoaDon.next()) {
+                    String maHD = rsHoaDon.getString("maHD");
+                    String maNV = rsHoaDon.getString("maNV");
+                    String maKH = rsHoaDon.getString("maKH");
+                    int trangThai = rsHoaDon.getInt("trangThai");
+                    Date ngayLap = rsHoaDon.getDate("ngayLap");
+                    double tongTien = rsHoaDon.getDouble("tongTien");
+                    double tienKhachDua = rsHoaDon.getDouble("tienKhachDua");
 
                     // Thêm dữ liệu vào model của JTable
-                    model.addRow(new Object[]{maVe, maNhanVien, maKhachHang, ngayDat, soDienThoai});
+                    tblModel_order.addRow(new Object[]{maHD, maNV, maKH, ngayLap, trangThai == 1 ? "Đã thanh toán" : "Chưa thanh toán"});
                 }
+
             }
+
         } catch (SQLException ex) {
+            ex.printStackTrace();
             // Hiển thị thông báo lỗi khi xảy ra lỗi truy vấn hoặc kết nối
             JOptionPane.showMessageDialog(null, "Lỗi khi tải dữ liệu từ cơ sở dữ liệu: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
         }
     }
 
 	public void init() {
-        tblModel_order = new DefaultTableModel(new String[]{"Mã hoá đơn", "Mã Nhân viên", "Mã Khách hàng", "Ngày Tạo", "Số Điện Thoại"}, 0);
+        tblModel_order = new DefaultTableModel(new String[]{"Mã hoá đơn", "Mã Nhân viên", "Mã Khách hàng", "Ngày Tạo", "Trạng thái"}, 0);
         tbl_order.setModel(tblModel_order);
-        tblModel_orderDetail = new DefaultTableModel(new String[]{"Mã vé", "Mã tàu", "Số lượng", "Giá Vé", "Loại Toa" , "Mã Hóa Đơn"}, 0);
+        tblModel_orderDetail = new DefaultTableModel(new String[]{"Mã vé tàu", "Mã hóa đơn", "Số lượng", "Giá Vé", "Thuế" , "Tổng tiền"}, 0);
         tbl_orderDetail.setModel(tblModel_orderDetail);
         tbl_orderDetail.getSelectionModel().addListSelectionListener((ListSelectionEvent event) -> {
             int rowIndex = tbl_orderDetail.getSelectedRow();
@@ -102,7 +106,53 @@ public final class HoaDon_GUI extends javax.swing.JPanel {
                 }
             }
         });
+        
+     // Thiết lập ListSelectionListener cho bảng hóa đơn
+        tbl_order.getSelectionModel().addListSelectionListener(event -> {
+            int selectedRow = tbl_order.getSelectedRow();
+            if (selectedRow == -1) {
+                return;  // Không có dòng nào được chọn
+            }
+
+            // Lấy mã hóa đơn từ dòng đã chọn
+            String maHD = (String) tblModel_order.getValueAt(selectedRow, 0);
+
+            // Gọi phương thức để load chi tiết hóa đơn dựa trên mã hóa đơn
+            loadChiTietHoaDon(maHD);
+        });
     }
+	
+	// Phương thức để tải chi tiết hóa đơn theo mã hóa đơn
+	private void loadChiTietHoaDon(String maHD) {
+	    try (Connection conn = DriverManager.getConnection(DB_URL, USER, PASSWORD)) {
+	        // Truy vấn SQL để lấy dữ liệu từ bảng ChiTietHoaDon dựa trên mã hóa đơn
+	        String sql = "SELECT maHD, maVT, soLuong, gia, thue, tongTien FROM ChiTietHoaDon WHERE maHD = ?";
+	        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+	            pstmt.setString(1, maHD);  // Đặt mã hóa đơn vào câu truy vấn
+
+	            try (ResultSet rs = pstmt.executeQuery()) {
+	                // Xóa toàn bộ dữ liệu cũ trong bảng chi tiết hóa đơn
+	                tblModel_orderDetail.setRowCount(0);
+
+	                // Duyệt qua từng dòng dữ liệu và thêm vào model của bảng chi tiết hóa đơn
+	                while (rs.next()) {
+	                    String maVT = rs.getString("maVT");
+	                    int soLuong = rs.getInt("soLuong");
+	                    double gia = rs.getDouble("gia");
+	                    double thue = rs.getDouble("thue");
+	                    double tongTien = rs.getDouble("tongTien");
+
+	                    // Thêm dữ liệu vào model của bảng chi tiết hóa đơn
+	                    tblModel_orderDetail.addRow(new Object[]{maVT, maHD, soLuong, gia, thue, tongTien});
+	                }
+	            }
+
+	        }
+	    } catch (SQLException ex) {
+	        ex.printStackTrace();
+	        JOptionPane.showMessageDialog(null, "Lỗi khi tải dữ liệu chi tiết hóa đơn: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+	    }
+	}
     public void alterTable() {
         DefaultTableCellRenderer rightAlign = new DefaultTableCellRenderer();
         rightAlign.setHorizontalAlignment(JLabel.RIGHT);
@@ -479,6 +529,7 @@ public final class HoaDon_GUI extends javax.swing.JPanel {
         txt_customerID.setText("");
         txt_customerPhone.setText("");
         txt_orderID.setText("");
+        
         txt_phone.setText("");
         txt_customerName.setText("");
         txt_total.setText("");
@@ -496,43 +547,82 @@ public final class HoaDon_GUI extends javax.swing.JPanel {
     }                                           
 
     private void btn_searchActionPerformed(java.awt.event.ActionEvent evt) {                                           
-        // TODO add your handling code here:
+        // Xóa thông tin cũ
         txt_phone.setText("");
         txt_customerName.setText("");
         txt_total.setText("");
-        if (validateFields()) {
-            String priceFrom, priceTo;
-            String oderID = txt_orderID.getText();
-            String customerID = txt_customerID.getText();
-            String phone = txt_customerPhone.getText();
-            if (cmb_orderPriceFilter.getSelectedIndex() == 0) {
-                priceFrom = "";
-                priceTo = "";
-            } else if (cmb_orderPriceFilter.getSelectedIndex() == 1) {
-                priceFrom = "";
-                priceTo = "100000";
-            } else if (cmb_orderPriceFilter.getSelectedIndex() == 2) {
-                priceFrom = "100000";
-                priceTo = "500000";
-            } else if (cmb_orderPriceFilter.getSelectedIndex() == 3) {
-                priceFrom = "500000";
-                priceTo = "1000000";
-            } else {
-                priceFrom = "1000000";
-                priceTo = "";
-            }
 
-            Date begin = jDateChooser1.getDate();
-            begin.setHours(0);
-            begin.setMinutes(0);
-            Date end = jDateChooser2.getDate();
-            end.setHours(23);
-            end.setMinutes(59);
-//            ArrayList<Order> list = bus.orderListWithFilter(oderID, customerID, phone, priceFrom, priceTo, begin, end);
+        // Lấy giá trị từ các trường tìm kiếm
+        String orderID = txt_orderID.getText().trim();
+        String customerID = txt_customerID.getText().trim();
+        String phone = txt_customerPhone.getText().trim();
+        Date beginDate = jDateChooser1.getDate();
+        Date endDate = jDateChooser2.getDate();
 
-//            renderOrdersTable(list);
+        // Xây dựng câu truy vấn SQL động
+        StringBuilder sql = new StringBuilder("SELECT maHD, maNV, maKH, ngayLap, trangThai FROM HoaDon WHERE 1=1");
+
+        // Danh sách tham số cho PreparedStatement
+        ArrayList<Object> params = new ArrayList<>();
+
+        // Thêm điều kiện tìm kiếm vào câu truy vấn nếu người dùng nhập dữ liệu
+        if (!orderID.isEmpty()) {
+            sql.append(" AND maHD LIKE ?");
+            params.add("%" + orderID + "%");
         }
-    }                                          
+        if (!customerID.isEmpty()) {
+            sql.append(" AND maKH LIKE ?");
+            params.add("%" + customerID + "%");
+        }
+        if (!phone.isEmpty()) {
+            sql.append(" AND maKH IN (SELECT maKH FROM KhachHang WHERE soDienThoai LIKE ?)");
+            params.add("%" + phone + "%");
+        }
+        if (beginDate != null) {
+            sql.append(" AND ngayLap >= ?");
+            params.add(new java.sql.Date(beginDate.getTime()));
+        }
+        if (endDate != null) {
+            sql.append(" AND ngayLap <= ?");
+            params.add(new java.sql.Date(endDate.getTime()));
+        }
+
+        try (Connection conn = DriverManager.getConnection(DB_URL, USER, PASSWORD)) {
+            try (PreparedStatement pstmt = conn.prepareStatement(sql.toString())) {
+                // Gán các tham số vào PreparedStatement
+                for (int i = 0; i < params.size(); i++) {
+                    pstmt.setObject(i + 1, params.get(i));
+                }
+
+                try (ResultSet rs = pstmt.executeQuery()) {
+                    // Xóa dữ liệu cũ trong bảng
+                    tblModel_order.setRowCount(0);
+
+                    // Duyệt kết quả truy vấn và thêm vào bảng
+                    while (rs.next()) {
+                        String maHD = rs.getString("maHD");
+                        String maNV = rs.getString("maNV");
+                        String maKH = rs.getString("maKH");
+                        Date ngayLap = rs.getDate("ngayLap");
+                        int trangThai = rs.getInt("trangThai");
+
+                        tblModel_order.addRow(new Object[]{
+                            maHD, maNV, maKH, ngayLap, trangThai == 1 ? "Đã thanh toán" : "Chưa thanh toán"
+                        });
+                    }
+
+                    // Hiển thị thông báo nếu không có kết quả
+                    if (tblModel_order.getRowCount() == 0) {
+                        JOptionPane.showMessageDialog(null, "Không tìm thấy hóa đơn phù hợp!", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+                    }
+                }
+            }
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+            JOptionPane.showMessageDialog(null, "Lỗi khi tìm kiếm: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+                          
 
     private void txt_customerIDActionPerformed(java.awt.event.ActionEvent evt) {                                               
         // TODO add your handling code here:

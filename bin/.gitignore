@@ -1,6 +1,11 @@
 /bus/
+/connectDB/
 /dao/
 /entity/
+/enums/
 /gui/
+/imgs/
+/interfaces/
 /main/
-/connectDB/
+/theme/
+/utilities/

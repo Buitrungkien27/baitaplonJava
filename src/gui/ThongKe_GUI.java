@@ -1,10 +1,6 @@
 package gui;
 
 import javax.swing.*;
-import javax.swing.event.TableModelEvent;
-import javax.swing.event.TableModelListener;
-import javax.swing.table.DefaultTableModel;
-import java.awt.*;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
@@ -13,14 +9,18 @@ import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.chart.axis.CategoryAxis;
 import org.jfree.chart.renderer.category.BarRenderer;
 import org.jfree.data.category.DefaultCategoryDataset;
-import java.awt.Color;
+import java.awt.*;
+import java.sql.*;
 
 public final class ThongKe_GUI extends JPanel {
     private JPanel mainPanel;
     private CardLayout cardLayout;
-    private JTable tableThongKe;
-    private DefaultTableModel modelThongKe;
     private DefaultCategoryDataset dataset; // Dữ liệu biểu đồ
+    private JTextField txtTongHoaDon, txtHoaDonDoiTra, txtDoanhThu;
+
+    private static final String DB_URL = "jdbc:sqlserver://localhost:1433;databaseName=QLBanVe";
+    private static final String USER = "sa";
+    private static final String PASSWORD = "sa123";
 
     public ThongKe_GUI() {
         initComponents();
@@ -51,18 +51,15 @@ public final class ThongKe_GUI extends JPanel {
 
         // Tổng số hóa đơn
         JLabel lblTongHoaDon = new JLabel("Tổng số hóa đơn:");
-        JTextField txtTongHoaDon = new JTextField("50", 10);
-        
+        txtTongHoaDon = new JTextField(10);
 
         // Tổng hóa đơn đổi trả
         JLabel lblTongHoaDonDoiTra = new JLabel("Tổng hóa đơn đổi trả:");
-        JTextField txtHoaDonDoiTra = new JTextField("4", 10);
-
+        txtHoaDonDoiTra = new JTextField(10);
 
         // Tổng doanh thu tháng
         JLabel lblTongDoanhThu = new JLabel("Tổng doanh thu tháng:");
-        JTextField txtDoanhThu = new JTextField("2.000.000.000", 10);
-        
+        txtDoanhThu = new JTextField(10);
 
         infoPanel.add(lblTongHoaDon);
         infoPanel.add(txtTongHoaDon);
@@ -70,35 +67,18 @@ public final class ThongKe_GUI extends JPanel {
         infoPanel.add(txtHoaDonDoiTra);
         infoPanel.add(lblTongDoanhThu);
         infoPanel.add(txtDoanhThu);
-        
 
         // Thêm bảng thống kê vào giao diện chính
         thongKePanel.add(filterPanel);
         thongKePanel.add(infoPanel);
 
-        // Tạo bảng thống kê có 3 cột: Loại vé, Số lượng, Số tiền
-        String[] columnNames = {"Loại vé", "Số lượng", "Số tiền"};
-        Object[][] data = {
-            {"Ngồi cứng", 50, 2500000},  // Giá vé 50,000
-            {"Ngồi mềm", 30, 3000000},   // Giá vé 100,000
-            {"Nằm cứng", 20, 3000000},   // Giá vé 150,000
-            {"Nằm mềm", 10, 2000000}     // Giá vé 200,000
-        };
-        modelThongKe = new DefaultTableModel(data, columnNames);
-        tableThongKe = new JTable(modelThongKe);
-        JScrollPane scrollPaneThongKe = new JScrollPane(tableThongKe);
-
-        // Tạo biểu đồ cột cho số lượng vé với nhãn 4 loại vé trên trục X
+        // Tạo biểu đồ cột cho doanh thu theo ngày
         dataset = new DefaultCategoryDataset();
-        dataset.addValue(50, "Ngồi cứng", "Ngồi cứng");
-        dataset.addValue(30, "Ngồi mềm", "Ngồi mềm");
-        dataset.addValue(20, "Nằm cứng", "Nằm cứng");
-        dataset.addValue(10, "Nằm mềm", "Nằm mềm");
 
         JFreeChart barChart = ChartFactory.createBarChart(
-                "Thống kê vé và doanh thu",
-                "Loại vé",  // Label cho trục x (loại vé)
-                "Số lượng vé",  // Label cho trục y (số lượng)
+                "Thống kê doanh thu theo ngày",
+                "Ngày",  // Label cho trục x (ngày)
+                "Doanh thu",  // Label cho trục y (doanh thu)
                 dataset,
                 PlotOrientation.VERTICAL,
                 true, true, false);
@@ -117,94 +97,99 @@ public final class ThongKe_GUI extends JPanel {
         renderer.setMaximumBarWidth(0.1);
 
         // Đặt màu cho các cột
-        renderer.setSeriesPaint(0, Color.GREEN);  // Ngồi cứng
-        renderer.setSeriesPaint(1, Color.YELLOW); // Ngồi mềm
-        renderer.setSeriesPaint(2, Color.ORANGE); // Nằm cứng
-        renderer.setSeriesPaint(3, Color.PINK);   // Nằm mềm
+        renderer.setSeriesPaint(0, Color.GREEN);
 
         ChartPanel chartPanel = new ChartPanel(barChart);
 
-        // Thêm bảng và biểu đồ vào panel
-        thongKePanel.add(scrollPaneThongKe);
+        // Thêm biểu đồ vào panel
         thongKePanel.add(chartPanel);
-        
+
         // Thêm các panel vào mainPanel
         mainPanel.add(thongKePanel, "ThongKe");
 
         add(mainPanel, BorderLayout.CENTER);
 
-        // Lắng nghe sự thay đổi của bảng để tính tiền tự động khi người dùng thay đổi số lượng
-        modelThongKe.addTableModelListener(new TableModelListener() {
-            @Override
-            public void tableChanged(TableModelEvent e) {
-                if (e.getColumn() == 1) {  // Chỉ lắng nghe thay đổi ở cột "Số lượng"
-                    updateTien();
-                    updateChart();  // Cập nhật biểu đồ khi thay đổi dữ liệu
-                }
-            }
-        });
+        // Lắng nghe sự thay đổi của monthComboBox và yearComboBox
+        monthComboBox.addActionListener(e -> loadThongKeData(monthComboBox, yearComboBox));
+        yearComboBox.addActionListener(e -> loadThongKeData(monthComboBox, yearComboBox));
     }
 
     private void init() {
         // Các thiết lập khác nếu cần
     }
 
-    // Hàm tính tiền và cập nhật cột "Số tiền" dựa trên số lượng vé
-    private void updateTien() {
-        try {
-            int ngoiCung = Integer.parseInt(tableThongKe.getValueAt(0, 1).toString());
-            int ngoiMem = Integer.parseInt(tableThongKe.getValueAt(1, 1).toString());
-            int namCung = Integer.parseInt(tableThongKe.getValueAt(2, 1).toString());
-            int namMem = Integer.parseInt(tableThongKe.getValueAt(3, 1).toString());
+    private void loadThongKeData(JComboBox<String> monthComboBox, JComboBox<String> yearComboBox) {
+        String selectedMonth = monthComboBox.getSelectedItem().toString();  // Tháng người dùng chọn
+        String selectedYear = yearComboBox.getSelectedItem().toString();    // Năm người dùng chọn
 
-            // Tính tổng tiền theo giá vé
-            int tongTienNgoiCung = ngoiCung * 50000;
-            int tongTienNgoiMem = ngoiMem * 100000;
-            int tongTienNamCung = namCung * 150000;
-            int tongTienNamMem = namMem * 200000;
+        int month = Integer.parseInt(selectedMonth.split(" ")[1]);
+        try (Connection conn = DriverManager.getConnection(DB_URL, USER, PASSWORD)) {
+            String sql = "SELECT DAY(ngayLap) AS ngay, SUM(tongTien) AS doanhThu FROM HoaDon WHERE MONTH(ngayLap) = ? AND YEAR(ngayLap) = ? GROUP BY DAY(ngayLap)";
+            try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                pstmt.setInt(1, month);
+                pstmt.setInt(2, Integer.parseInt(selectedYear));
+                ResultSet rs = pstmt.executeQuery();
 
-            // Cập nhật cột "Số tiền" trong bảng
-            modelThongKe.setValueAt(tongTienNgoiCung, 0, 2);
-            modelThongKe.setValueAt(tongTienNgoiMem, 1, 2);
-            modelThongKe.setValueAt(tongTienNamCung, 2, 2);
-            modelThongKe.setValueAt(tongTienNamMem, 3, 2);
-        } catch (NumberFormatException ex) {
-            JOptionPane.showMessageDialog(this, "Vui lòng nhập số lượng hợp lệ!", "Lỗi nhập dữ liệu", JOptionPane.ERROR_MESSAGE);
+                // Xóa dữ liệu cũ trên biểu đồ
+                dataset.clear();
+
+                // Lưu doanh thu từng ngày vào biểu đồ
+                while (rs.next()) {
+                    int day = rs.getInt("ngay");  // Ngày
+                    double dailyRevenue = rs.getDouble("doanhThu");  // Doanh thu ngày
+
+                    // Thêm dữ liệu vào dataset cho biểu đồ
+                    dataset.addValue(dailyRevenue, "Doanh thu", "Ngày " + day);
+                }
+
+                updateThongKeSummary(month, Integer.parseInt(selectedYear));
+            }
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Lỗi khi truy vấn cơ sở dữ liệu: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
         }
     }
 
-    // Hàm cập nhật biểu đồ dựa trên số lượng vé
-    private void updateChart() {
-        try {
-            int ngoiCung = Integer.parseInt(tableThongKe.getValueAt(0, 1).toString());
-            int ngoiMem = Integer.parseInt(tableThongKe.getValueAt(1, 1).toString());
-            int namCung = Integer.parseInt(tableThongKe.getValueAt(2, 1).toString());
-            int namMem = Integer.parseInt(tableThongKe.getValueAt(3, 1).toString());
+    private void updateThongKeSummary(int month, int year) {
+        try (Connection conn = DriverManager.getConnection(DB_URL, USER, PASSWORD)) {
+            // Truy vấn tổng số hóa đơn
+            String sqlHoaDon = "SELECT COUNT(*) AS tongHoaDon FROM HoaDon WHERE MONTH(ngayLap) = ? AND YEAR(ngayLap) = ?";
+            try (PreparedStatement pstmt = conn.prepareStatement(sqlHoaDon)) {
+                pstmt.setInt(1, month);
+                pstmt.setInt(2, year);
+                ResultSet rs = pstmt.executeQuery();
+                if (rs.next()) {
+                    int tongHoaDon = rs.getInt("tongHoaDon");
+                    txtTongHoaDon.setText(String.valueOf(tongHoaDon));
+                }
+            }
 
-            // Cập nhật dataset của biểu đồ với nhãn 4 loại vé
-            dataset.setValue(ngoiCung, "Ngồi cứng", "Ngồi cứng");
-            dataset.setValue(ngoiMem, "Ngồi mềm", "Ngồi mềm");
-            dataset.setValue(namCung, "Nằm cứng", "Nằm cứng");
-            dataset.setValue(namMem, "Nằm mềm", "Nằm mềm");
-        } catch (NumberFormatException ex) {
-            // Xử lý lỗi nếu dữ liệu nhập vào không hợp lệ
+            // Truy vấn tổng số hóa đơn đổi trả
+            String sqlHoaDonDoiTra = "SELECT COUNT(*) AS tongHoaDonDoiTra FROM HoaDon WHERE MONTH(ngayLap) = ? AND YEAR(ngayLap) = ? AND trangThai = 0";
+            try (PreparedStatement pstmt = conn.prepareStatement(sqlHoaDonDoiTra)) {
+                pstmt.setInt(1, month);
+                pstmt.setInt(2, year);
+                ResultSet rs = pstmt.executeQuery();
+                if (rs.next()) {
+                    int tongHoaDonDoiTra = rs.getInt("tongHoaDonDoiTra");
+                    txtHoaDonDoiTra.setText(String.valueOf(tongHoaDonDoiTra));
+                }
+            }
+
+            // Truy vấn tổng doanh thu
+            String sqlDoanhThu = "SELECT SUM(tongTien) AS tongDoanhThu FROM HoaDon WHERE MONTH(ngayLap) = ? AND YEAR(ngayLap) = ?";
+            try (PreparedStatement pstmt = conn.prepareStatement(sqlDoanhThu)) {
+                pstmt.setInt(1, month);
+                pstmt.setInt(2, year);
+                ResultSet rs = pstmt.executeQuery();
+                if (rs.next()) {
+                    double tongDoanhThu = rs.getDouble("tongDoanhThu");
+                    txtDoanhThu.setText(String.format("%.0f", tongDoanhThu));
+                }
+            }
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Lỗi khi truy vấn cơ sở dữ liệu: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
         }
-    }
-
-    private void showThongKePanel() {
-        cardLayout.show(mainPanel, "ThongKe");
-    }
-
-    public void showHomePanel() {
-        cardLayout.show(mainPanel, "Home");
-    }
-
-    public static void main(String[] args) {
-        JFrame frame = new JFrame("Giao diện chính");
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setSize(800, 600);
-        frame.setLocationRelativeTo(null);
-        frame.add(new ThongKe_GUI());
-        frame.setVisible(true);
     }
 }

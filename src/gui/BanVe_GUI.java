@@ -13,6 +13,12 @@ import java.awt.event.ActionListener;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableColumn;
 import com.toedter.calendar.JDateChooser;
+
+import entity.HoaDon;
+import entity.VeTau;
+import main.Application;
+
+import java.util.ArrayList;
 import java.util.Date;
 import java.text.SimpleDateFormat;
 import java.util.HashMap;
@@ -20,6 +26,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
+import java.util.List;
 
 public class BanVe_GUI extends JPanel {
     private static final String DB_URL = "jdbc:sqlserver://localhost:1433;databaseName=QLBanVe";
@@ -31,6 +38,9 @@ public class BanVe_GUI extends JPanel {
     private JDateChooser dateNgayTao;
     private JTable table;
     private DefaultTableModel model;
+    
+    
+    private String maKH;
 
     private Map<String, Set<String>> gheDaDatTheoToa = new HashMap<>();  // Lưu trữ các ghế đã đặt theo từng toa
     private JButton[] buttonsGhe;  // Lưu các button ghế để có thể thay đổi màu
@@ -117,17 +127,21 @@ public class BanVe_GUI extends JPanel {
             }
         });
         txtSDT.addActionListener(new ActionListener() {
-            @Override
+            
+
+			@Override
             public void actionPerformed(ActionEvent e) {
                 String sdt = txtSDT.getText();
                 if (!sdt.isEmpty()) {
                     try (Connection conn = DriverManager.getConnection(DB_URL, USER, PASSWORD)) {
-                        String sql = "SELECT tenKH FROM KhachHang WHERE sdt = ?";
+//                        String sql = "SELECT tenKH FROM KhachHang WHERE sdt = ?";
+                        String sql = "SELECT maKH, tenKH FROM KhachHang WHERE sdt = ?";
                         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
                             pstmt.setString(1, sdt);
                             ResultSet rs = pstmt.executeQuery();
                             if (rs.next()) {
                                 // Lấy tên khách hàng từ kết quả truy vấn
+                            	maKH = rs.getString("maKH");
                                 String hoTen = rs.getString("tenKH");
                                 txtHoTen.setText(hoTen);
                             } else {
@@ -158,6 +172,21 @@ public class BanVe_GUI extends JPanel {
         gbc.gridwidth = 2; // Trải rộng qua hai cột
         gbc.anchor = GridBagConstraints.CENTER; 
         pnlNhapThongTin.add(btnThanhToan, gbc);
+        
+        JButton btnXuaHoaDon = new JButton("Xuất hóa đơn"); 
+        gbc.gridx = 3;
+        gbc.gridy = (labels.length / 2) + 1; // Đặt nó ở hàng cuối cùng
+        gbc.gridwidth = 2; // Trải rộng qua hai cột
+        gbc.anchor = GridBagConstraints.CENTER; 
+        pnlNhapThongTin.add(btnXuaHoaDon, gbc);
+        
+        btnXuaHoaDon.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                xuLyXuatHoaDon();
+            }
+        });
+        
         
         // Bên phải - Phần chọn ghế
         JPanel pnlChonGhe = new JPanel(new GridLayout(5, 5, 5, 5));
@@ -579,8 +608,8 @@ public class BanVe_GUI extends JPanel {
  // Phương thức lưu dữ liệu vào cơ sở dữ liệu
     private void saveToDatabase(String gaDi, String gaDen, String hoTen, String sdt, String maHD, Date ngayTao, double tienKhachDua, double tienThua, String loaiToa, String viTriGhe, int giaVe, String maTau, String maHoaDon) {
         try (Connection conn = DriverManager.getConnection(DB_URL, USER, PASSWORD)) {
-            String sql = "INSERT INTO VeTau (maVT, gaDi, gaDen, hoTenKH, soDienThoai, ngayTao, tienKhachDua, tienThua, loaiToa, viTriGhe, giaVe , maTau, maHoaDon) " +
-                         "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            String sql = "INSERT INTO VeTau (maVT, gaDi, gaDen, hoTenKH, soDienThoai, ngayTao, tienKhachDua, tienThua, loaiToa, viTriGhe, giaVe , maTau, maHoaDon, maKH) " +
+                         "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
             try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
                 pstmt.setString(1, maHD);  // Mã vé tàu
                 pstmt.setString(2, gaDi);  // Ga đi
@@ -595,6 +624,7 @@ public class BanVe_GUI extends JPanel {
                 pstmt.setInt(11, giaVe);           // Giá vé
                 pstmt.setString(12, maTau);   // mã tàu
 				pstmt.setString(13, maHoaDon);
+				pstmt.setString(14, maKH);
                 pstmt.executeUpdate();
             }
         } catch (SQLException ex) {
@@ -606,6 +636,114 @@ public class BanVe_GUI extends JPanel {
     private String generateMaKH(String hoTen) {
         // TODO: Tạo mã khách hàng tự động từ họ tên
         return hoTen.substring(0, Math.min(3, hoTen.length())).toUpperCase() + String.valueOf(System.currentTimeMillis()).substring(10);
+    }
+    
+    private void xuLyXuatHoaDon() {
+        String maHoaDon = JOptionPane.showInputDialog(null, 
+                "Vui lòng nhập mã hóa đơn:", 
+                "Nhập Mã Hóa Đơn", 
+                JOptionPane.QUESTION_MESSAGE);
+
+        if (maHoaDon == null || maHoaDon.trim().isEmpty()) {
+            JOptionPane.showMessageDialog(null, "Bạn chưa nhập mã hóa đơn!", "Thông báo", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        // Lấy danh sách vé theo mã hóa đơn
+        List<VeTau> tickets = getTicketsByInvoice(maHoaDon);
+        
+        String maKH = tickets.get(0).getMaKH();
+
+        if (tickets.isEmpty()) {
+            JOptionPane.showMessageDialog(null, "Không tìm thấy vé nào với mã hóa đơn: " + maHoaDon, "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+
+        // Tính tổng tiền cho hóa đơn
+        double tongTien = tickets.stream().mapToDouble(VeTau::getGiaVe).sum();
+
+        // Tạo hóa đơn
+        HoaDon hoaDon = new HoaDon(maHoaDon, Application.nhanVien.getMaNV(), maKH, 1, new Date(), tongTien, tongTien);
+
+        // Lưu dữ liệu vào cơ sở dữ liệu
+        try (Connection conn = DriverManager.getConnection(DB_URL, USER, PASSWORD)) {
+            conn.setAutoCommit(false); // Bắt đầu giao dịch
+
+            // Lưu hóa đơn vào bảng HoaDon
+            String sqlInsertHoaDon = "INSERT INTO HoaDon (maHD, maNV, maKH, trangThai, ngayLap, tongTien, tienKhachDua) VALUES (?, ?, ?, ?, ?, ?, ?)";
+            try (PreparedStatement pstmt = conn.prepareStatement(sqlInsertHoaDon)) {
+                pstmt.setString(1, hoaDon.getMaHD());
+                pstmt.setString(2, hoaDon.getMaNV());
+                pstmt.setString(3, hoaDon.getMaKH());
+                pstmt.setInt(4, hoaDon.getTrangThai());
+                pstmt.setDate(5, new java.sql.Date(hoaDon.getNgayLap().getTime()));
+                pstmt.setDouble(6, hoaDon.getTongTien());
+                pstmt.setDouble(7, hoaDon.getTienKhachDua());
+                pstmt.executeUpdate();
+            }
+
+            // Lưu chi tiết hóa đơn vào bảng ChiTietHoaDon
+            String sqlInsertChiTiet = "INSERT INTO ChiTietHoaDon (maHD, maVT, soLuong, gia, thue, tongTien) VALUES (?, ?, ?, ?, ?, ?)";
+            try (PreparedStatement pstmt = conn.prepareStatement(sqlInsertChiTiet)) {
+                for (VeTau ticket : tickets) {
+                    pstmt.setString(1, maHoaDon);
+                    pstmt.setString(2, ticket.getMaVT());
+                    pstmt.setInt(3, 1); // Số lượng vé luôn là 1
+                    pstmt.setDouble(4, ticket.getGiaVe());
+                    pstmt.setDouble(5, 0); // Thuế giả định là 0
+                    pstmt.setDouble(6, ticket.getGiaVe()); // Tổng tiền bằng giá vé (không có thuế)
+                    pstmt.addBatch();
+                }
+                pstmt.executeBatch(); // Thực thi tất cả chi tiết hóa đơn cùng lúc
+            }
+
+            conn.commit(); // Xác nhận giao dịch
+            JOptionPane.showMessageDialog(null, "Xuất hóa đơn thành công!", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+            JOptionPane.showMessageDialog(null, "Lỗi khi lưu dữ liệu: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    
+    private List<VeTau> getTicketsByInvoice(String maHoaDon) {
+        List<VeTau> ticketList = new ArrayList<>();
+
+        String sql = "SELECT gaDi, gaDen, hoTenKH, soDienThoai, maVT, ngayTao, tienKhachDua, tienThua, loaiToa, viTriGhe, giaVe, maTau, maHoaDon, maKH "
+                   + "FROM VeTau WHERE maHoaDon = ?";
+        try (Connection conn = DriverManager.getConnection(DB_URL, USER, PASSWORD);
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            // Thiết lập giá trị cho tham số mã hóa đơn
+            pstmt.setString(1, maHoaDon);
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                // Duyệt qua từng dòng dữ liệu từ kết quả truy vấn
+                while (rs.next()) {
+                    String gaDi = rs.getString("gaDi");
+                    String gaDen = rs.getString("gaDen");
+                    String hoTen = rs.getString("hoTenKH");
+                    String sdt = rs.getString("soDienThoai");
+                    String maVT = rs.getString("maVT");
+                    Date ngayTao = rs.getDate("ngayTao");
+                    double tienKhachDua = rs.getDouble("tienKhachDua");
+                    double tienThua = rs.getDouble("tienThua");
+                    String loaiToa = rs.getString("loaiToa");
+                    String viTriGhe = rs.getString("viTriGhe");
+                    int giaVe = rs.getInt("giaVe");
+                    String maTau = rs.getString("maTau");
+                    String maKH = rs.getString("maKH");
+
+                    // Tạo đối tượng VeTau và thêm vào danh sách
+                    VeTau ticket = new VeTau(gaDi, gaDen, hoTen, sdt, maVT, ngayTao, tienKhachDua, tienThua, loaiToa, viTriGhe, giaVe, maTau, maHoaDon, maKH);
+                    ticketList.add(ticket);
+                }
+            }
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(null, "Lỗi khi truy vấn danh sách vé: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+        }
+
+        return ticketList;
     }
     
 
