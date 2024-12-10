@@ -13,6 +13,7 @@ import javax.swing.table.DefaultTableModel;
 import com.formdev.flatlaf.FlatClientProperties;
 
 import connectDB.ConnectDB;
+import entity.KhachHang;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -119,8 +120,41 @@ public final class HoaDon_GUI extends javax.swing.JPanel {
 
             // Gọi phương thức để load chi tiết hóa đơn dựa trên mã hóa đơn
             loadChiTietHoaDon(maHD);
+            
+            String maKH = (String) tblModel_order.getValueAt(selectedRow, 2);
+            KhachHang kh = getInforCustomer(maKH);
+            txt_customerName.setText(kh.getTenKH());
+            System.out.println("check sdt: " + kh.getSdt());
+            txt_phone.setText(kh.getSdt());
         });
     }
+	
+	private KhachHang getInforCustomer(String maKH) {
+	    KhachHang kh = null; // Bắt đầu với null để xử lý trường hợp không tìm thấy
+	    try (Connection conn = DriverManager.getConnection(DB_URL, USER, PASSWORD)) {
+	        String sql = "SELECT tenKH, sdt FROM KhachHang WHERE maKH = ?";
+	        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+	            pstmt.setString(1, maKH);  // Đặt mã khách hàng vào câu truy vấn
+
+	            try (ResultSet rs = pstmt.executeQuery()) {
+	                if (rs.next()) { // Dùng if vì chỉ có một dòng dữ liệu
+	                    String tenKH = rs.getString("tenKH");
+	                    String sdt = rs.getString("sdt");
+	                    kh = new KhachHang(); // Tạo đối tượng KhachHang mới
+	                    kh.setTenKH(tenKH);
+	                    kh.setSdt(sdt);
+	                } else {
+	                    System.out.println("Không tìm thấy khách hàng với mã: " + maKH);
+	                }
+	            }
+	        }
+	    } catch (SQLException ex) {
+	        ex.printStackTrace();
+	        JOptionPane.showMessageDialog(null, "Lỗi khi tải thông tin khách hàng: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+	    }
+	    return kh;
+	}
+
 	
 	// Phương thức để tải chi tiết hóa đơn theo mã hóa đơn
 	private void loadChiTietHoaDon(String maHD) {
@@ -133,7 +167,8 @@ public final class HoaDon_GUI extends javax.swing.JPanel {
 	            try (ResultSet rs = pstmt.executeQuery()) {
 	                // Xóa toàn bộ dữ liệu cũ trong bảng chi tiết hóa đơn
 	                tblModel_orderDetail.setRowCount(0);
-
+	                
+	                double tongHoaDon = 0;
 	                // Duyệt qua từng dòng dữ liệu và thêm vào model của bảng chi tiết hóa đơn
 	                while (rs.next()) {
 	                    String maVT = rs.getString("maVT");
@@ -141,10 +176,12 @@ public final class HoaDon_GUI extends javax.swing.JPanel {
 	                    double gia = rs.getDouble("gia");
 	                    double thue = rs.getDouble("thue");
 	                    double tongTien = rs.getDouble("tongTien");
+	                    tongHoaDon += tongTien;
 
 	                    // Thêm dữ liệu vào model của bảng chi tiết hóa đơn
 	                    tblModel_orderDetail.addRow(new Object[]{maVT, maHD, soLuong, gia, thue, tongTien});
 	                }
+	                txt_total.setText(tongHoaDon + " đ");
 	            }
 
 	        }

@@ -369,11 +369,19 @@ public class BanVe_GUI extends JPanel {
             @Override
             public void actionPerformed(ActionEvent e) {
                 updateGheColors();  // Gọi hàm để cập nhật màu ghế khi loại toa thay đổi
+                
+                // trạng thái ghế
+                loadGheData();
             }
         });
 
         // Gọi hàm để thiết lập màu ghế ban đầu
         updateGheColors();
+        
+        
+        
+        // trạng thái ghế theo vé
+        loadGheData();
     }
     
 
@@ -582,11 +590,18 @@ public class BanVe_GUI extends JPanel {
 
     // Hàm tạo mã vé tự động
     private String generateMaVe(String gaDi, Date ngayTao, String loaiToa, String viTriGhe) {
-        String maGa = getMaGa(gaDi);
+    	String maGa = getMaGa(gaDi);
         String ngayThang = new SimpleDateFormat("ddMM").format(ngayTao);
         String maToa = loaiToa.substring(loaiToa.length() - 1); // Lấy số toa
         String maGhe = formatViTriGhe(viTriGhe);
-        String uniqueID = String.format("%03d", (getGheDaDat().size() + 1)); // Tạo số ID duy nhất
+        
+        // Lấy thời gian hiện tại và định dạng
+        String thoiGianHienTai = new SimpleDateFormat("ddHHmmss").format(new Date());
+        // Ghép thời gian vào mã ga
+        maGa = maGa + thoiGianHienTai;
+
+        // Tạo số ID duy nhất
+        String uniqueID = String.format("%03d", (getGheDaDat().size() + 1)); 
 
         return maGa + ngayThang + maToa + maGhe + uniqueID;
     }
@@ -744,6 +759,55 @@ public class BanVe_GUI extends JPanel {
         }
 
         return ticketList;
+    }
+    
+    private void loadGheData() {
+        Map<String, Date> danhSachVe = new HashMap<>();
+        Date today = new Date(); // Lấy ngày hiện tại
+
+        // Bước 1: Lấy dữ liệu từ cơ sở dữ liệu
+        try (Connection conn = DriverManager.getConnection(DB_URL, USER, PASSWORD)) {
+            String sql = "SELECT loaiToa, viTriGhe, ngayTao FROM VeTau";
+            try (PreparedStatement pstmt = conn.prepareStatement(sql);
+                 ResultSet rs = pstmt.executeQuery()) {
+
+                while (rs.next()) {
+                    String loaiToa = rs.getString("loaiToa");
+                    String viTriGhe = rs.getString("viTriGhe");
+                    Date ngayTao = rs.getDate("ngayTao");
+
+                    // Ghép loaiToa và viTriGhe thành mã duy nhất
+                    String maGhe = loaiToa + "-" + viTriGhe;
+                    danhSachVe.put(maGhe, ngayTao);
+                }
+            }
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(null, "Lỗi khi tải dữ liệu ghế: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        // Bước 2: Cập nhật trạng thái ghế
+        String loaiToaDangChon = (String) comboLoaiToa.getSelectedItem();
+        for (int i = 0; i < buttonsGhe.length; i++) {
+            String viTriGhe = buttonsGhe[i].getText();
+            String maGhe = loaiToaDangChon + "-" + viTriGhe; // Xác định mã ghế
+
+            if (danhSachVe.containsKey(maGhe) && isSameDay(danhSachVe.get(maGhe), today)) {
+                // Ghế đã đặt và ngày mua vé là hôm nay
+                buttonsGhe[i].setBackground(Color.RED);
+                buttonsGhe[i].setEnabled(false); // Khóa ghế đã đặt
+            } else {
+                // Ghế trống
+                buttonsGhe[i].setBackground(colors[comboLoaiToa.getSelectedIndex()]);
+                buttonsGhe[i].setEnabled(true);
+            }
+        }
+    }
+    
+ // Hàm kiểm tra hai ngày có trùng nhau không
+    private boolean isSameDay(Date date1, Date date2) {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
+        return sdf.format(date1).equals(sdf.format(date2));
     }
     
 

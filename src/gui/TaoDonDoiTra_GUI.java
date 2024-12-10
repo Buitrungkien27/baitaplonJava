@@ -24,6 +24,7 @@ import utilities.SVGIcon;
 
 public class TaoDonDoiTra_GUI extends javax.swing.JPanel {
 
+private static final boolean True = false;
 //    private ReturnOrderManagament_BUS bus;
     private Order order;
     private final NhanVien nv = Application.nhanVien;
@@ -400,7 +401,7 @@ public class TaoDonDoiTra_GUI extends javax.swing.JPanel {
         lbl_employeeID.setText("Mã nhân viên:");
         pnl_employeeID.add(lbl_employeeID);
 
-        txt_employeeID.setEditable(false);
+        txt_employeeID.setEditable(True);
         txt_employeeID.setMaximumSize(new java.awt.Dimension(2147483647, 40));
         txt_employeeID.setMinimumSize(new java.awt.Dimension(64, 30));
         txt_employeeID.setPreferredSize(new java.awt.Dimension(64, 40));
@@ -414,7 +415,7 @@ public class TaoDonDoiTra_GUI extends javax.swing.JPanel {
         lbl_nameEmp.setText("Tên nhân viên:");
         pnl_nameEmp.add(lbl_nameEmp);
 
-        txt_nameEmp.setEditable(false);
+        txt_nameEmp.setEditable(true);
         txt_nameEmp.setMaximumSize(new java.awt.Dimension(2147483647, 40));
         txt_nameEmp.setMinimumSize(new java.awt.Dimension(64, 30));
         txt_nameEmp.setPreferredSize(new java.awt.Dimension(64, 40));
@@ -441,7 +442,7 @@ public class TaoDonDoiTra_GUI extends javax.swing.JPanel {
         lbl_returnOrderID.setPreferredSize(new java.awt.Dimension(85, 16));
         pnl_returnOrderID.add(lbl_returnOrderID);
 
-        txt_returnOrderID.setEditable(false);
+        txt_returnOrderID.setEditable(true);
         txt_returnOrderID.setMaximumSize(new java.awt.Dimension(2147483647, 40));
         txt_returnOrderID.setMinimumSize(new java.awt.Dimension(64, 30));
         txt_returnOrderID.setPreferredSize(new java.awt.Dimension(64, 40));
@@ -461,7 +462,7 @@ public class TaoDonDoiTra_GUI extends javax.swing.JPanel {
         lbl_orderID.setPreferredSize(new java.awt.Dimension(85, 16));
         pnl_orderID.add(lbl_orderID);
 
-        txt_orderID.setEditable(false);
+        txt_orderID.setEditable(true);
         txt_orderID.setMaximumSize(new java.awt.Dimension(2147483647, 40));
         txt_orderID.setMinimumSize(new java.awt.Dimension(64, 30));
         txt_orderID.setPreferredSize(new java.awt.Dimension(64, 40));
@@ -482,7 +483,7 @@ public class TaoDonDoiTra_GUI extends javax.swing.JPanel {
         pnl_chooseDateReturn.setPreferredSize(new java.awt.Dimension(100, 30));
         pnl_chooseDateReturn.setLayout(new java.awt.GridLayout(1, 0));
 
-        chooseDateReturn.setEnabled(false);
+        chooseDateReturn.setEnabled(true);
         pnl_chooseDateReturn.add(chooseDateReturn);
 
         pnl_returnOrderDate.add(pnl_chooseDateReturn);
