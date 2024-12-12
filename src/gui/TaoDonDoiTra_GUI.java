@@ -61,10 +61,12 @@ private static final boolean True = false;
 //        bus = new ReturnOrderManagament_BUS();
         cart = new ArrayList<>();
         //model
-        tblModel_orderDetail = new DefaultTableModel(new String[]{"Mã hoá đơn", "Mã vé tàu", "Mã tàu", "Số lượng", "Đơn giá", "Tổng tiền"}, 0);
+        tblModel_orderDetail = new DefaultTableModel(new String[]{"Mã hoá đơn đổi trả", "Mã hóa đơn gốc", "Loại", "Trạng thái", "Ngày", "Nhân viên"}, 0);
         tbl_orderDetail.setModel(tblModel_orderDetail);
         tblModel_product = new DefaultTableModel(new String[]{"Mã vé tàu", "Mã tàu", "Số lượng"}, 0);
         tbl_product.setModel(tblModel_product);
+        
+        loadReturnOrderData(null); 
 
         tbl_product.getModel().addTableModelListener((e) -> {
             int row = e.getFirstRow();
@@ -356,65 +358,66 @@ private static final boolean True = false;
             public void actionPerformed(java.awt.event.ActionEvent evt) {
             	String maHD = txt_searchOrder.getText().trim();
                 if (maHD.isEmpty()) {
-                    JOptionPane.showMessageDialog(null, "Vui lòng nhập mã tàu!", "Thông báo", JOptionPane.WARNING_MESSAGE);
-                    return;
+                	loadReturnOrderData(null);
+                	return;
                 }
 
-                String sql = "SELECT gaDi, gaDen, hoTenKH, soDienThoai, maVT, ngayTao, tienKhachDua, tienThua, loaiToa, viTriGhe, giaVe, maTau, maHoaDon, maKH " +
-                             "FROM VeTau WHERE maHoaDon = ?";
-                try (Connection conn = DriverManager.getConnection(DB_URL, USER, PASSWORD)) {
-                    try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-                        // Gán tham số tìm kiếm
-                        pstmt.setString(1, maHD);
-
-                        try (ResultSet rs = pstmt.executeQuery()) {
-                            // Xóa dữ liệu cũ trong bảng
-                            tblModel_orderDetail.setRowCount(0);
-
-                            // Xử lý kết quả trả về
-                            boolean hasResult = false;
-                            while (rs.next()) {
-                                hasResult = true;
-
-                                // Tạo đối tượng VeTau từ dữ liệu truy vấn
-                                VeTau veTau = new VeTau(
-                                    rs.getString("gaDi"),
-                                    rs.getString("gaDen"),
-                                    rs.getString("hoTenKH"),
-                                    rs.getString("soDienThoai"),
-                                    rs.getString("maVT"),
-                                    rs.getDate("ngayTao"),
-                                    rs.getDouble("tienKhachDua"),
-                                    rs.getDouble("tienThua"),
-                                    rs.getString("loaiToa"),
-                                    rs.getString("viTriGhe"),
-                                    rs.getInt("giaVe"),
-                                    rs.getString("maTau"),
-                                    rs.getString("maHoaDon"),
-                                    rs.getString("maKH")
-                                );
-
-                                // Thêm vào bảng
-                                tblModel_orderDetail.addRow(new Object[]{
-                                    veTau.getMaHoaDon(),
-                                    veTau.getMaVT(),
-                                    veTau.getMaTau(),
-                                    1, // Số lượng (nếu chỉ có 1 vé thì để 1)
-                                    veTau.getGiaVe(),
-                                    veTau.getGiaVe() // Tổng tiền = giá vé vì số lượng là 1
-                                });
-                            }
-
-                            // Kiểm tra nếu không có kết quả
-                            if (!hasResult) {
-                                JOptionPane.showMessageDialog(null, "Không tìm thấy vé tàu phù hợp!", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
-                            }
-                        }
-                    }
-                } catch (SQLException ex) {
-                    ex.printStackTrace();
-                    JOptionPane.showMessageDialog(null, "Lỗi khi tìm kiếm: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
-                }
+//                String sql = "SELECT gaDi, gaDen, hoTenKH, soDienThoai, maVT, ngayTao, tienKhachDua, tienThua, loaiToa, viTriGhe, giaVe, maTau, maHoaDon, maKH " +
+//                             "FROM VeTau WHERE maHoaDon = ?";
+//                try (Connection conn = DriverManager.getConnection(DB_URL, USER, PASSWORD)) {
+//                    try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+//                        // Gán tham số tìm kiếm
+//                        pstmt.setString(1, maHD);
+//
+//                        try (ResultSet rs = pstmt.executeQuery()) {
+//                            // Xóa dữ liệu cũ trong bảng
+//                            tblModel_orderDetail.setRowCount(0);
+//
+//                            // Xử lý kết quả trả về
+//                            boolean hasResult = false;
+//                            while (rs.next()) {
+//                                hasResult = true;
+//
+//                                // Tạo đối tượng VeTau từ dữ liệu truy vấn
+//                                VeTau veTau = new VeTau(
+//                                    rs.getString("gaDi"),
+//                                    rs.getString("gaDen"),
+//                                    rs.getString("hoTenKH"),
+//                                    rs.getString("soDienThoai"),
+//                                    rs.getString("maVT"),
+//                                    rs.getDate("ngayTao"),
+//                                    rs.getDouble("tienKhachDua"),
+//                                    rs.getDouble("tienThua"),
+//                                    rs.getString("loaiToa"),
+//                                    rs.getString("viTriGhe"),
+//                                    rs.getInt("giaVe"),
+//                                    rs.getString("maTau"),
+//                                    rs.getString("maHoaDon"),
+//                                    rs.getString("maKH")
+//                                );
+//
+//                                // Thêm vào bảng
+//                                tblModel_orderDetail.addRow(new Object[]{
+//                                    veTau.getMaHoaDon(),
+//                                    veTau.getMaVT(),
+//                                    veTau.getMaTau(),
+//                                    1, // Số lượng (nếu chỉ có 1 vé thì để 1)
+//                                    veTau.getGiaVe(),
+//                                    veTau.getGiaVe() // Tổng tiền = giá vé vì số lượng là 1
+//                                });
+//                            }
+//
+//                            // Kiểm tra nếu không có kết quả
+//                            if (!hasResult) {
+//                                JOptionPane.showMessageDialog(null, "Không tìm thấy vé tàu phù hợp!", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+//                            }
+//                        }
+//                    }
+//                } catch (SQLException ex) {
+//                    ex.printStackTrace();
+//                    JOptionPane.showMessageDialog(null, "Lỗi khi tìm kiếm: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+//                }
+                loadReturnOrderData(maHD);
                 }
         });
         pnl_buttonSearchOrder.add(btn_searchOrder, java.awt.BorderLayout.CENTER);
@@ -873,6 +876,7 @@ private static final boolean True = false;
                         if (rowsInserted > 0) {
                             JOptionPane.showMessageDialog(null, "Hóa đơn đổi trả đã được tạo thành công!", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
                         }
+                        loadReturnOrderData(null);
                     }
                 } catch (SQLException e) {
                     e.printStackTrace();
@@ -989,6 +993,58 @@ private static final boolean True = false;
     private void btn_clearValueActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_clearValueActionPerformed
         renderReturnOrderInfor();
     }//GEN-LAST:event_btn_clearValueActionPerformed
+    
+    
+    
+    private void loadReturnOrderData(String maHoaDon) {
+        // SQL truy vấn linh hoạt
+        String sql = "SELECT maHDT, maHD, loai, trangThai, ngayLap, maNV, tienTra, lyDo FROM HoaDonDoiTra";
+        if (maHoaDon != null && !maHoaDon.isEmpty()) {
+            sql += " WHERE maHDT = ?";
+        }
+
+        try (Connection conn = DriverManager.getConnection(DB_URL, USER, PASSWORD);
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            // Nếu có mã hóa đơn, set giá trị tham số
+            if (maHoaDon != null && !maHoaDon.isEmpty()) {
+                pstmt.setString(1, maHoaDon);
+            }
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                // Xóa dữ liệu cũ trong bảng
+                tblModel_orderDetail.setRowCount(0);
+
+                boolean hasResult = false;
+                while (rs.next()) {
+                    hasResult = true;
+
+                    // Thêm dữ liệu vào bảng
+                    tblModel_orderDetail.addRow(new Object[]{
+                        rs.getString("maHDT"),
+                        rs.getString("maHD"),
+                        rs.getInt("loai") == 1 ? "Hoàn trả" : "Đổi",
+                        rs.getInt("trangThai") == 1 ? "Chờ xử lý" : "Hoàn tất",
+                        rs.getDate("ngayLap"),
+                        rs.getString("maNV"),
+                        rs.getBigDecimal("tienTra"),
+                        rs.getString("lyDo")
+                    });
+                }
+
+                if (!hasResult) {
+                    JOptionPane.showMessageDialog(null,
+                        maHoaDon != null && !maHoaDon.isEmpty() ?
+                        "Không tìm thấy hóa đơn đổi trả phù hợp!" :
+                        "Không có dữ liệu hóa đơn đổi trả!",
+                        "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+                }
+            }
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(null, "Lỗi khi tải dữ liệu hóa đơn đổi trả: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
 
 
     // Variables declaration - do not modify//GEN-BEGIN:variables

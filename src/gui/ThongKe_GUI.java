@@ -14,8 +14,7 @@ import java.sql.*;
 
 public final class ThongKe_GUI extends JPanel {
     private JPanel mainPanel;
-    private CardLayout cardLayout;
-    private DefaultCategoryDataset dataset; // Dữ liệu biểu đồ
+    private DefaultCategoryDataset dataset;
     private JTextField txtTongHoaDon, txtHoaDonDoiTra, txtDoanhThu;
 
     private static final String DB_URL = "jdbc:sqlserver://localhost:1433;databaseName=QLBanVe";
@@ -26,39 +25,32 @@ public final class ThongKe_GUI extends JPanel {
         initComponents();
         init();
     }
-    
+
     private void initComponents() {
         setLayout(new BorderLayout());
-        cardLayout = new CardLayout();
-        mainPanel = new JPanel(cardLayout);
+        mainPanel = new JPanel(new CardLayout());
 
-        // Tạo màn hình thống kê
         JPanel thongKePanel = new JPanel();
         thongKePanel.setLayout(new BoxLayout(thongKePanel, BoxLayout.Y_AXIS));
 
-        // Phần lọc tháng và năm
         JPanel filterPanel = new JPanel();
-        JComboBox<String> monthComboBox = new JComboBox<>(new String[]{"Tháng 1", "Tháng 2", "Tháng 3", "Tháng 4", "Tháng 5", "Tháng 6", "Tháng 7", "Tháng 8", "Tháng 9", "Tháng 10", "Tháng 11", "Tháng 12"});
+        JComboBox<String> monthComboBox = new JComboBox<>(new String[]{
+                "Tháng 1", "Tháng 2", "Tháng 3", "Tháng 4", "Tháng 5", "Tháng 6", 
+                "Tháng 7", "Tháng 8", "Tháng 9", "Tháng 10", "Tháng 11", "Tháng 12"
+        });
         JComboBox<String> yearComboBox = new JComboBox<>(new String[]{"2023", "2024", "2025"});
         filterPanel.add(new JLabel("Lọc"));
         filterPanel.add(monthComboBox);
         filterPanel.add(yearComboBox);
 
-        // Tạo bảng thống kê chi tiết
-        JPanel infoPanel = new JPanel();
-        infoPanel.setLayout(new GridLayout(3, 2, 10, 10));
+        JPanel infoPanel = new JPanel(new GridLayout(3, 2, 10, 10));
         infoPanel.setBorder(BorderFactory.createTitledBorder("Thông tin chi tiết"));
 
-        // Tổng số hóa đơn
         JLabel lblTongHoaDon = new JLabel("Tổng số hóa đơn:");
         txtTongHoaDon = new JTextField(10);
-
-        // Tổng hóa đơn đổi trả
         JLabel lblTongHoaDonDoiTra = new JLabel("Tổng hóa đơn đổi trả:");
         txtHoaDonDoiTra = new JTextField(10);
-
-        // Tổng doanh thu tháng
-        JLabel lblTongDoanhThu = new JLabel("Tổng doanh thu tháng:");
+        JLabel lblTongDoanhThu = new JLabel("Tổng doanh thu:");
         txtDoanhThu = new JTextField(10);
 
         infoPanel.add(lblTongHoaDon);
@@ -68,77 +60,58 @@ public final class ThongKe_GUI extends JPanel {
         infoPanel.add(lblTongDoanhThu);
         infoPanel.add(txtDoanhThu);
 
-        // Thêm bảng thống kê vào giao diện chính
         thongKePanel.add(filterPanel);
         thongKePanel.add(infoPanel);
 
-        // Tạo biểu đồ cột cho doanh thu theo ngày
         dataset = new DefaultCategoryDataset();
-
         JFreeChart barChart = ChartFactory.createBarChart(
                 "Thống kê doanh thu theo ngày",
-                "Ngày",  // Label cho trục x (ngày)
-                "Doanh thu",  // Label cho trục y (doanh thu)
+                "Ngày",
+                "Doanh thu",
                 dataset,
                 PlotOrientation.VERTICAL,
                 true, true, false);
 
-        // Tùy chỉnh plot để đảm bảo việc căn chỉnh tốt hơn
         CategoryPlot plot = barChart.getCategoryPlot();
         CategoryAxis domainAxis = plot.getDomainAxis();
         BarRenderer renderer = (BarRenderer) plot.getRenderer();
-
-        // Điều chỉnh khoảng cách giữa các cột và nhãn
         domainAxis.setCategoryMargin(0.2);
         domainAxis.setLowerMargin(0.02);
         domainAxis.setUpperMargin(0.02);
-
-        // Tùy chỉnh BarRenderer để giảm độ rộng cột
         renderer.setMaximumBarWidth(0.1);
-
-        // Đặt màu cho các cột
         renderer.setSeriesPaint(0, Color.GREEN);
 
         ChartPanel chartPanel = new ChartPanel(barChart);
-
-        // Thêm biểu đồ vào panel
         thongKePanel.add(chartPanel);
 
-        // Thêm các panel vào mainPanel
         mainPanel.add(thongKePanel, "ThongKe");
-
         add(mainPanel, BorderLayout.CENTER);
 
-        // Lắng nghe sự thay đổi của monthComboBox và yearComboBox
         monthComboBox.addActionListener(e -> loadThongKeData(monthComboBox, yearComboBox));
         yearComboBox.addActionListener(e -> loadThongKeData(monthComboBox, yearComboBox));
     }
 
     private void init() {
-        // Các thiết lập khác nếu cần
+        // Thiết lập ban đầu nếu cần
     }
 
     private void loadThongKeData(JComboBox<String> monthComboBox, JComboBox<String> yearComboBox) {
-        String selectedMonth = monthComboBox.getSelectedItem().toString();  // Tháng người dùng chọn
-        String selectedYear = yearComboBox.getSelectedItem().toString();    // Năm người dùng chọn
-
+        String selectedMonth = monthComboBox.getSelectedItem().toString();
+        String selectedYear = yearComboBox.getSelectedItem().toString();
         int month = Integer.parseInt(selectedMonth.split(" ")[1]);
+
         try (Connection conn = DriverManager.getConnection(DB_URL, USER, PASSWORD)) {
-            String sql = "SELECT DAY(ngayLap) AS ngay, SUM(tongTien) AS doanhThu FROM HoaDon WHERE MONTH(ngayLap) = ? AND YEAR(ngayLap) = ? GROUP BY DAY(ngayLap)";
+            String sql = "SELECT DAY(ngayLap) AS ngay, SUM(tongTien) AS doanhThu FROM HoaDon " +
+                         "WHERE MONTH(ngayLap) = ? AND YEAR(ngayLap) = ? GROUP BY DAY(ngayLap)";
             try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
                 pstmt.setInt(1, month);
                 pstmt.setInt(2, Integer.parseInt(selectedYear));
                 ResultSet rs = pstmt.executeQuery();
 
-                // Xóa dữ liệu cũ trên biểu đồ
                 dataset.clear();
-
-                // Lưu doanh thu từng ngày vào biểu đồ
                 while (rs.next()) {
-                    int day = rs.getInt("ngay");  // Ngày
-                    double dailyRevenue = rs.getDouble("doanhThu");  // Doanh thu ngày
-
-                    // Thêm dữ liệu vào dataset cho biểu đồ
+                    int day = rs.getInt("ngay");
+                    double dailyRevenue = rs.getDouble("doanhThu");
                     dataset.addValue(dailyRevenue, "Doanh thu", "Ngày " + day);
                 }
 
@@ -152,7 +125,6 @@ public final class ThongKe_GUI extends JPanel {
 
     private void updateThongKeSummary(int month, int year) {
         try (Connection conn = DriverManager.getConnection(DB_URL, USER, PASSWORD)) {
-            // Truy vấn tổng số hóa đơn
             String sqlHoaDon = "SELECT COUNT(*) AS tongHoaDon FROM HoaDon WHERE MONTH(ngayLap) = ? AND YEAR(ngayLap) = ?";
             try (PreparedStatement pstmt = conn.prepareStatement(sqlHoaDon)) {
                 pstmt.setInt(1, month);
@@ -164,8 +136,7 @@ public final class ThongKe_GUI extends JPanel {
                 }
             }
 
-            // Truy vấn tổng số hóa đơn đổi trả
-            String sqlHoaDonDoiTra = "SELECT COUNT(*) AS tongHoaDonDoiTra FROM HoaDon WHERE MONTH(ngayLap) = ? AND YEAR(ngayLap) = ? AND trangThai = 0";
+            String sqlHoaDonDoiTra = "SELECT COUNT(*) AS tongHoaDonDoiTra FROM HoaDonDoiTra WHERE MONTH(ngayLap) = ? AND YEAR(ngayLap) = ?";
             try (PreparedStatement pstmt = conn.prepareStatement(sqlHoaDonDoiTra)) {
                 pstmt.setInt(1, month);
                 pstmt.setInt(2, year);
@@ -176,7 +147,6 @@ public final class ThongKe_GUI extends JPanel {
                 }
             }
 
-            // Truy vấn tổng doanh thu
             String sqlDoanhThu = "SELECT SUM(tongTien) AS tongDoanhThu FROM HoaDon WHERE MONTH(ngayLap) = ? AND YEAR(ngayLap) = ?";
             try (PreparedStatement pstmt = conn.prepareStatement(sqlDoanhThu)) {
                 pstmt.setInt(1, month);

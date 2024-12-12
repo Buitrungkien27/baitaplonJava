@@ -283,3 +283,4 @@ DELETE FROM ChiTietHoaDon; -- Xóa dữ liệu ở bảng con trước
 DELETE FROM HoaDon;        -- Sau đó xóa bảng trung gian
 DELETE FROM KhachHang;     -- Cuối cùng xóa bảng cha
 DELETE FROM VeTau;         -- Nếu cần xóa thêm bảng khác
+DELETE FROM HoaDonDoiTra;

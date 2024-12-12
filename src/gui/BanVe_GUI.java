@@ -33,7 +33,7 @@ public class BanVe_GUI extends JPanel {
     private static final String USER = "sa";
     private static final String PASSWORD = "sa123";
 
-    private JTextField txtHoTen, txtSDT, txtMaHD, txtTienKhachDua, txtTienThua, txtViTriGhe, txtGiaVe, txtgaDi, txtgaDen, txtMaTau , txtMaHoaDon;
+    private JTextField txtHoTen, txtSDT, txtMaHD, txtTienKhachDua, txtTienThua, txtViTriGhe, txtGiaVe, txtgaDi, txtgaDen , txtMaHoaDon;
     private JComboBox<String> comboLoaiToa;
     private JDateChooser dateNgayTao;
     private JTable table;
@@ -46,6 +46,7 @@ public class BanVe_GUI extends JPanel {
     private JButton[] buttonsGhe;  // Lưu các button ghế để có thể thay đổi màu
     private Set<String> gheTamDat = new HashSet<>(); // Lưu trữ ghế được chọn tạm thời trong lần đặt hiện tại
     private Color[] colors = {Color.GREEN, Color.YELLOW, Color.ORANGE, Color.PINK}; // Màu theo loại toa
+	private JComboBox comboMaTau;
     public BanVe_GUI() {
         setLayout(new BorderLayout());
         
@@ -83,7 +84,7 @@ public class BanVe_GUI extends JPanel {
             txtMaHD = new JTextField(), dateNgayTao = new JDateChooser(),
             txtTienKhachDua = new JTextField(), txtTienThua = new JTextField(),
             comboLoaiToa = new JComboBox<>(new String[]{"Toa 1", "Toa 2", "Toa 3", "Toa 4", "Toa 5"}),
-            txtGiaVe = new JTextField(), txtMaTau = new JTextField(),
+            txtGiaVe = new JTextField(), comboMaTau = new JComboBox<>(),
             		txtMaHoaDon = new JTextField() 
         };
         txtgaDi.setEditable(false);
@@ -94,26 +95,41 @@ public class BanVe_GUI extends JPanel {
         txtGiaVe.setEditable(false);
         txtMaHoaDon.setEditable(false);
         
-        // Add this ActionListener for txtMaTau here to fetch data from the database when a train ID is entered
-        txtMaTau.addActionListener(new ActionListener() {
+     // Bước 1: Lấy danh sách mã tàu từ cơ sở dữ liệu và thêm vào combo box
+        try (Connection conn = DriverManager.getConnection(DB_URL, USER, PASSWORD)) {
+            String sql = "SELECT maTau FROM Tau";
+            try (PreparedStatement pstmt = conn.prepareStatement(sql);
+                 ResultSet rs = pstmt.executeQuery()) {
+
+                while (rs.next()) {
+                    String maTau = rs.getString("maTau");
+                    comboMaTau.addItem(maTau); // Thêm mã tàu vào combo box
+                }
+            }
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(null, "Lỗi khi tải danh sách mã tàu: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+        }
+
+        // Bước 2: Thêm ActionListener để xử lý khi chọn mã tàu
+        comboMaTau.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                String maTau = txtMaTau.getText().trim();
-                
-                if (!maTau.isEmpty()) {
+                String maTau = (String) comboMaTau.getSelectedItem();
+
+                if (maTau != null && !maTau.isEmpty()) {
                     try (Connection conn = DriverManager.getConnection(DB_URL, USER, PASSWORD)) {
                         String sql = "SELECT gaDi, gaDen, loaiToa FROM Tau WHERE maTau = ?";
                         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
                             pstmt.setString(1, maTau);
                             ResultSet rs = pstmt.executeQuery();
-                            
+
                             if (rs.next()) {
-                                // Populate the fields with the fetched data
+                                // Hiển thị dữ liệu vào các trường liên quan
                                 txtgaDi.setText(rs.getString("gaDi"));
                                 txtgaDen.setText(rs.getString("gaDen"));
                                 comboLoaiToa.setSelectedItem(rs.getString("loaiToa"));
                             } else {
-                                // Clear fields if no data is found
+                                // Nếu không tìm thấy dữ liệu, xóa các trường liên quan
                                 JOptionPane.showMessageDialog(null, "Không tìm thấy tàu với mã tàu này.", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
                                 txtgaDi.setText("");
                                 txtgaDen.setText("");
@@ -282,7 +298,7 @@ public class BanVe_GUI extends JPanel {
                     String strNgayTao = (ngayTao != null) ? sdf.format(ngayTao) : "";
                     double tienThua = tienKhachDua - tongGiaVe;
                     txtTienThua.setText(String.format("%.2f", tienThua)); // Cập nhật số tiền thừa
-                    String maTau = txtMaTau.getText().trim(); // Lấy mã tàu từ ô nhập
+                    String maTau = (String) comboMaTau.getSelectedItem();
 
                     String loaiToa = (String) comboLoaiToa.getSelectedItem();
                     // Tạo mã hóa đơn tự động
@@ -331,7 +347,6 @@ public class BanVe_GUI extends JPanel {
                     txtgaDi.setText("");
                     txtgaDen.setText("");
                     txtGiaVe.setText("");
-                    txtMaTau.setText("");                  
                     comboLoaiToa.setSelectedIndex(0);
                     dateNgayTao.setDate(null);
 
@@ -609,7 +624,7 @@ public class BanVe_GUI extends JPanel {
     // Hàm lấy danh sách ghế đã đặt cho toa hiện tại
     private Set<String> getGheDaDat() {
         String loaiToa = (String) comboLoaiToa.getSelectedItem();
-        String maTau = txtMaTau.getText(); // Lấy mã tàu từ ô nhập
+        String maTau = (String) comboMaTau.getSelectedItem();
         return gheDaDatTheoToa.computeIfAbsent(loaiToa, k -> new HashSet<>());
     }
 
@@ -767,17 +782,18 @@ public class BanVe_GUI extends JPanel {
 
         // Bước 1: Lấy dữ liệu từ cơ sở dữ liệu
         try (Connection conn = DriverManager.getConnection(DB_URL, USER, PASSWORD)) {
-            String sql = "SELECT loaiToa, viTriGhe, ngayTao FROM VeTau";
+            String sql = "SELECT maTau, loaiToa, viTriGhe, ngayTao FROM VeTau";
             try (PreparedStatement pstmt = conn.prepareStatement(sql);
                  ResultSet rs = pstmt.executeQuery()) {
 
                 while (rs.next()) {
+                    String maTau = rs.getString("maTau");
                     String loaiToa = rs.getString("loaiToa");
                     String viTriGhe = rs.getString("viTriGhe");
                     Date ngayTao = rs.getDate("ngayTao");
 
-                    // Ghép loaiToa và viTriGhe thành mã duy nhất
-                    String maGhe = loaiToa + "-" + viTriGhe;
+                    // Ghép maTau, loaiToa và viTriGhe thành mã duy nhất
+                    String maGhe = maTau + "-" + loaiToa + "-" + viTriGhe;
                     danhSachVe.put(maGhe, ngayTao);
                 }
             }
@@ -787,29 +803,43 @@ public class BanVe_GUI extends JPanel {
         }
 
         // Bước 2: Cập nhật trạng thái ghế
+        String maTauDangChon = (String) comboMaTau.getSelectedItem();
         String loaiToaDangChon = (String) comboLoaiToa.getSelectedItem();
-        for (int i = 0; i < buttonsGhe.length; i++) {
-            String viTriGhe = buttonsGhe[i].getText();
-            String maGhe = loaiToaDangChon + "-" + viTriGhe; // Xác định mã ghế
 
+        if (maTauDangChon == null || loaiToaDangChon == null) {
+            JOptionPane.showMessageDialog(null, "Vui lòng chọn mã tàu và loại toa.", "Thông báo", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        for (int i = 0; i < buttonsGhe.length; i++) {
+            String viTriGhe = buttonsGhe[i].getText(); // Vị trí ghế như A1, A2, ..., A25
+            String maGhe = maTauDangChon + "-" + loaiToaDangChon + "-" + viTriGhe; // Tạo mã ghế duy nhất từ mã tàu, toa và vị trí ghế
+
+            // Kiểm tra xem ghế này có vé đã đặt trong ngày hôm nay không
             if (danhSachVe.containsKey(maGhe) && isSameDay(danhSachVe.get(maGhe), today)) {
-                // Ghế đã đặt và ngày mua vé là hôm nay
+                // Nếu vé đã đặt trong ngày, khóa ghế
                 buttonsGhe[i].setBackground(Color.RED);
-                buttonsGhe[i].setEnabled(false); // Khóa ghế đã đặt
+                buttonsGhe[i].setEnabled(false); // Khóa ghế
             } else {
-                // Ghế trống
-                buttonsGhe[i].setBackground(colors[comboLoaiToa.getSelectedIndex()]);
+                // Nếu vé chưa đặt hoặc vé đã đi, ghế có thể đặt lại
                 buttonsGhe[i].setEnabled(true);
+
+                // Kiểm tra chỉ số của comboLoaiToa để tránh lỗi ArrayIndexOutOfBounds
+                int selectedIndex = comboLoaiToa.getSelectedIndex();
+                if (selectedIndex >= 0 && selectedIndex < colors.length) {
+                    buttonsGhe[i].setBackground(colors[selectedIndex]);
+                } else {
+                    buttonsGhe[i].setBackground(Color.GRAY); // Màu mặc định nếu chỉ số không hợp lệ
+                }
             }
         }
     }
-    
- // Hàm kiểm tra hai ngày có trùng nhau không
+
+    // Hàm kiểm tra hai ngày có trùng nhau không
     private boolean isSameDay(Date date1, Date date2) {
         SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
         return sdf.format(date1).equals(sdf.format(date2));
     }
-    
 
     // Phần main vẫn giữ nguyên
     public static void main(String[] args) {
